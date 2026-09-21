@@ -1,0 +1,388 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap');
+
+/* =========================================================
+   PROVOKERS BRAND SYSTEM - SUITE PVKS (LIGHT EDITORIAL THEME)
+   Based on Provokers Brand Book (May 2025)
+   ========================================================= */
+
+:root {
+  /* Paleta Primaria Oficial Provokers */
+  --pvks-orange: #F6911E;
+  --pvks-orange-hover: #e07f12;
+  --pvks-orange-light: #FFF7ED;
+  --pvks-orange-glow: rgba(246, 145, 30, 0.2);
+  --pvks-dark: #191919;
+  --pvks-gray-dark: #2B2B2B;
+  --pvks-gray-medium: #64748B;
+  --pvks-gray-light: #F1F5F9;
+  --pvks-amber: #FFAA34;
+
+  /* Paleta Secundaria Oficial Provokers */
+  --pvks-red: #F23F3B;
+  --pvks-yellow: #FFC548;
+  --pvks-green: #00B487;
+  --pvks-lightblue: #6DD0F0;
+  --pvks-purple: #775AFF;
+
+  /* Tokens Globales de UI (Luz Editorial / Fondo Claro) */
+  --primary: #F6911E;
+  --secondary: #00B487;
+  --accent: #F6911E;
+  --danger: #F23F3B;
+  --bg: #F8F9FA;
+  --card-bg: #FFFFFF;
+  --card-border: #E2E8F0;
+  --text: #191919;
+  --text-muted: #64748B;
+  --font-main: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+  --font-display: 'Segoe UI', 'Outfit', sans-serif;
+  --font-quote: 'Georgia', serif;
+}
+
+/* Base Body Styles (Light Canvas) */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  color: var(--text);
+  margin-top: 0;
+}
+
+/* =========================================================
+   PANELS & CARDS
+   ========================================================= */
+
+.glass-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  position: relative;
+}
+
+.card-hover-fx {
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover-fx:hover {
+  transform: translateY(-3px);
+  border-color: rgba(246, 145, 30, 0.4) !important;
+  box-shadow: 0 12px 30px -4px rgba(246, 145, 30, 0.12), 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+}
+
+.tool-card {
+  cursor: pointer;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+}
+
+.tool-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--pvks-orange) !important;
+  box-shadow: 0 20px 40px -10px rgba(246, 145, 30, 0.2) !important;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+button {
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primary-button {
+  background: var(--pvks-orange);
+  color: #FFFFFF;
+  border: none;
+  padding: 0.75rem 1.4rem;
+  border-radius: 0.6rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(246, 145, 30, 0.25);
+}
+
+.primary-button:hover {
+  background: var(--pvks-orange-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(246, 145, 30, 0.35);
+}
+
+.secondary-button {
+  background: #FFFFFF;
+  color: var(--text);
+  border: 1px solid #D1D5DB;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.6rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.secondary-button:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+  color: #0F172A;
+}
+
+.back-button {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #475569;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.back-button:hover {
+  background: #F8FAFC;
+  color: #0F172A;
+  border-color: #94A3B8;
+}
+
+/* =========================================================
+   FORM CONTROLS (INPUTS, SELECTS, TEXTAREAS)
+   ========================================================= */
+
+input,
+select,
+textarea {
+  width: 100%;
+  background: #FFFFFF;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 0.88rem;
+  margin-bottom: 0.75rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--pvks-orange);
+  box-shadow: 0 0 0 3px rgba(246, 145, 30, 0.15);
+}
+
+label {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: #475569;
+}
+
+/* =========================================================
+   TYPOGRAPHY & VERBATIMS (GEORGIA ITALIC PROVOKERS)
+   ========================================================= */
+
+.pvks-verbatim {
+  font-family: var(--font-quote);
+  font-style: italic;
+  letter-spacing: -0.03em;
+  color: #191919;
+  line-height: 1.55;
+}
+
+/* =========================================================
+   EPISTEMIC BADGES (LIGHT SYSTEM)
+   ========================================================= */
+
+.badge-observado {
+  background-color: #E0F2FE;
+  color: #0369A1;
+  border-color: #BAE6FD;
+}
+
+.badge-derivado {
+  background-color: #FEF3C7;
+  color: #B45309;
+  border-color: #FDE68A;
+}
+
+.badge-hipotesis {
+  background-color: #D1FAE5;
+  color: #047857;
+  border-color: #A7F3D0;
+}
+
+/* =========================================================
+   PORTAL VIEW & SUITE THEMES
+   ========================================================= */
+
+.theme-portal {
+  background-color: #F8F9FA;
+}
+
+.theme-portal body {
+  background: #F8F9FA;
+}
+
+.portal-view {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 85vh;
+}
+
+.sntd-accent {
+  color: var(--pvks-orange);
+  font-weight: 900;
+}
+
+/* PAC Theme (Medical Soft Blue on Clean Canvas) */
+.theme-pac {
+  --primary: #4F46E5;
+  --secondary: #00B487;
+  --accent: #F6911E;
+  --bg: #F8FAFC;
+  --card-bg: #FFFFFF;
+  --text: #191919;
+  --text-muted: #64748B;
+}
+
+/* SNTD Theme (Yellow/Orange Accents on Clean Canvas) */
+.theme-sntd {
+  --primary: #F6911E;
+  --secondary: #00B487;
+  --accent: #F6911E;
+  --bg: #F8F9FA;
+  --card-bg: #FFFFFF;
+  --text: #191919;
+  --text-muted: #64748B;
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: 350px 1fr 350px;
+  gap: 1.5rem;
+  grid-template-rows: auto auto;
+}
+
+@media (max-width: 1200px) {
+  .grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlowAnim 2s infinite;
+}
+
+@keyframes pulseGlowAnim {
+  0% {
+    stroke-opacity: 0.8;
+    stroke-width: 2.5px;
+  }
+  50% {
+    stroke-opacity: 0.3;
+    stroke-width: 4px;
+  }
+  100% {
+    stroke-opacity: 0.8;
+    stroke-width: 2.5px;
+  }
+}
+
+/* =========================================================
+   PRINT ENGINE - PROVOKERS EDITORIAL EXPORT (PDF)
+   ========================================================= */
+
+@media print {
+  /* Ocultar elementos de navegación, modales y barras interactivas */
+  header,
+  nav,
+  .no-print,
+  button,
+  select,
+  input,
+  [role="tooltip"] {
+    display: none !important;
+  }
+
+  /* Forzar fondo blanco limpio y márgenes consistentes */
+  html, body {
+    background-color: #FFFFFF !important;
+    color: #191919 !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Asegurar que las tarjetas e imágenes no se corten entre páginas */
+  .glass-panel,
+  .card-hover-fx,
+  div[style*="borderRadius"],
+  div[style*="border-radius"] {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    box-shadow: none !important;
+    border: 1px solid #CBD5E1 !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  /* Asegurar fidelidad cromática al imprimir o guardar en PDF */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Encabezado editorial impreso */
+  .print-only-header {
+    display: block !important;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #F6911E;
+  }
+}
+
+.print-only-header {
+  display: none;
+}
