@@ -13,6 +13,7 @@ import NewSuitePlaybookModal from './components/admin/NewSuitePlaybookModal.jsx'
 import MetaSuiteHQView from './components/admin/MetaSuiteHQView.jsx';
 import RestrictedAccessScreen from './components/shared/RestrictedAccessScreen.jsx';
 import { useAccessGuard } from './context/AccessGuardContext.jsx';
+import { useSuiteDictionary } from './context/useSuiteDictionary.js';
 import {
   getSuitePlaybooks,
   saveSuitePlaybooks,
@@ -23,6 +24,7 @@ import './index.css';
 
 function App() {
   const guard = useAccessGuard();
+  const { isMetaAdmin, openAuthModal } = useSuiteDictionary();
 
   // El punto de entrada central de la aplicación es la carátula de la Suite ('portal')
   // Si entra un cliente con token restrictivo, dirigirlo directamente a su Playbook asignado
@@ -272,22 +274,53 @@ function App() {
               </select>
             </div>
 
-            <button
-              onClick={() => setIsNewPlaybookModalOpen(true)}
-              className="primary-button"
-              style={{
-                fontSize: '0.88rem',
-                padding: '11px 22px',
-                fontWeight: 800,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                borderRadius: '12px',
-                boxShadow: '0 4px 14px rgba(246, 145, 30, 0.25)'
-              }}
-            >
-              <span style={{ fontSize: '1.1rem' }}>+</span> Crear Nuevo Playbook
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                onClick={() => {
+                  if (isMetaAdmin) {
+                    setView('meta-hq');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } else {
+                    openAuthModal();
+                  }
+                }}
+                style={{
+                  fontSize: '0.88rem',
+                  padding: '11px 18px',
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  borderRadius: '12px',
+                  backgroundColor: isMetaAdmin ? '#0F172A' : '#F8FAFC',
+                  color: isMetaAdmin ? '#FFFFFF' : '#475569',
+                  border: isMetaAdmin ? 'none' : '1.5px solid #CBD5E1',
+                  cursor: 'pointer',
+                  boxShadow: isMetaAdmin ? '0 4px 12px rgba(15, 23, 42, 0.2)' : '0 1px 3px rgba(0,0,0,0.05)',
+                  transition: 'all 0.15s ease'
+                }}
+                title={isMetaAdmin ? 'Abrir Panel Central de Gobierno y Tokens' : 'Ingresar clave maestra para ver el Centro de Supervisión'}
+              >
+                <span>🛡️</span> {isMetaAdmin ? 'Supervisión & Accesos (HQ)' : 'Meta-Suite HQ'}
+              </button>
+
+              <button
+                onClick={() => setIsNewPlaybookModalOpen(true)}
+                className="primary-button"
+                style={{
+                  fontSize: '0.88rem',
+                  padding: '11px 22px',
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 14px rgba(246, 145, 30, 0.25)'
+                }}
+              >
+                <span style={{ fontSize: '1.1rem' }}>+</span> Crear Nuevo Playbook
+              </button>
+            </div>
           </div>
 
           {/* Galería Central de Playbooks de la Suite */}

@@ -22,6 +22,7 @@ import { PlaybookDataProvider } from './context/PlaybookDataContext.jsx';
 import { mapEntityToScenario } from './engine/scenarioBridge.js';
 import { mapEntityToAIOperation } from './engine/aiBridge.js';
 import { usePlaybookData } from './context/usePlaybookData.js';
+import { useAccessGuard } from '../context/AccessGuardContext.jsx';
 
 export default function PlaybookApp({ onBackToPortal }) {
   return (
@@ -43,6 +44,7 @@ function PlaybookAppInner({ onBackToPortal }) {
   const [incomingAIEntity, setIncomingAIEntity] = useState(null);
   const [incomingOppDraft, setIncomingOppDraft] = useState(null);
   const { data } = usePlaybookData();
+  const guard = useAccessGuard();
 
   const handleInspectEntity = (entity) => {
     setInspectedEntity(entity);
@@ -123,6 +125,34 @@ function PlaybookAppInner({ onBackToPortal }) {
           </div>
         </div>
       </div>
+
+      {/* Banner de Consulta Restringida y Marca de Agua para Clientes */}
+      {guard.isRestricted && (
+        <div
+          style={{
+            backgroundColor: '#0F172A',
+            color: '#F8FAFC',
+            padding: '7px 20px',
+            fontSize: '0.76rem',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid rgba(255,255,255,0.12)',
+            zIndex: 950,
+            position: 'relative'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.85rem' }}>🛡️</span>
+            <span>{guard.watermarkText || 'MODO CONSULTA PRIVADA · PROVOKERS CONFIDENCIAL'}</span>
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#94A3B8', display: 'flex', gap: '12px' }}>
+            <span>Rol: <strong style={{ color: '#F1F5F9' }}>{guard.role === 'reviewer' ? 'Revisor (Exportación Habilitada)' : 'Solo Lectura'}</strong></span>
+            <span>Acceso Tokenizado</span>
+          </div>
+        </div>
+      )}
 
       {/* Global Navigation Bar */}
       <Navbar

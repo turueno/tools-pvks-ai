@@ -36,7 +36,7 @@ export default function Navbar({
     { id: 'opportunities', dictKey: 'navbar.tabs.opportunities', label: 'Opportunity Builder', icon: 'opportunity' },
     { id: 'matrix', dictKey: 'navbar.tabs.matrix', label: 'Matriz 3 Marcas', icon: 'matrix' },
     { id: 'ai', dictKey: 'navbar.tabs.ai', label: 'Asistente IA', icon: 'ai', special: true },
-    { id: 'admin', dictKey: 'navbar.tabs.admin', label: 'Admin (CMS)', icon: 'settings', adminBadge: true }
+    ...(!guard.isRestricted ? [{ id: 'admin', dictKey: 'navbar.tabs.admin', label: 'Admin (CMS)', icon: 'settings', adminBadge: true }] : [])
   ];
 
   return (
