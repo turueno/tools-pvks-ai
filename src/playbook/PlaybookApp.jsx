@@ -16,7 +16,6 @@ import AIAssistantView from './components/views/AIAssistantView.jsx';
 import AdminView from './components/views/AdminView.jsx';
 import EditModal from './components/admin/EditModal.jsx';
 import ExportShareModal from './components/shared/ExportShareModal.jsx';
-import NewProjectModal from './components/modals/NewProjectModal.jsx';
 import MetaAdminAuthModal from '../components/admin/MetaAdminAuthModal.jsx';
 import MetaAdminCMSModal from '../components/admin/MetaAdminCMSModal.jsx';
 import { PlaybookDataProvider } from './context/PlaybookDataContext.jsx';
@@ -40,7 +39,6 @@ function PlaybookAppInner({ onBackToPortal }) {
   const [inspectedEntity, setInspectedEntity] = useState(null);
   const [activeInsightId, setActiveInsightId] = useState(null);
   const [isExportShareOpen, setIsExportShareOpen] = useState(false);
-  const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
   const [incomingScenario, setIncomingScenario] = useState(null);
   const [incomingAIEntity, setIncomingAIEntity] = useState(null);
   const [incomingOppDraft, setIncomingOppDraft] = useState(null);
@@ -138,7 +136,6 @@ function PlaybookAppInner({ onBackToPortal }) {
         onSelectEpistemic={setSelectedEpistemic}
         onBackToPortal={onBackToPortal}
         onOpenExportShare={() => setIsExportShareOpen(true)}
-        onOpenNewProject={() => setIsNewProjectOpen(true)}
       />
 
       {/* Main View Router */}
@@ -255,12 +252,6 @@ function PlaybookAppInner({ onBackToPortal }) {
         isOpen={isExportShareOpen}
         onClose={() => setIsExportShareOpen(false)}
         currentView={currentView}
-      />
-
-      {/* New Project Creator Modal */}
-      <NewProjectModal
-        isOpen={isNewProjectOpen}
-        onClose={() => setIsNewProjectOpen(false)}
       />
 
       {/* Meta Admin Structural CMS & Auth Modals */}

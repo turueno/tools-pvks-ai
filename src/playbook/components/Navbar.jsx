@@ -6,7 +6,6 @@ import { usePlaybookData } from '../context/usePlaybookData.js';
 import { useSuiteDictionary } from '../../context/useSuiteDictionary.js';
 import EditableText from '../../components/shared/EditableText.jsx';
 import MetaAdminPill from '../../components/admin/MetaAdminPill.jsx';
-import ProjectSwitcher from './shared/ProjectSwitcher.jsx';
 import { useAccessGuard } from '../../context/AccessGuardContext.jsx';
 
 export default function Navbar({
@@ -19,8 +18,7 @@ export default function Navbar({
   selectedEpistemic,
   onSelectEpistemic,
   onBackToPortal,
-  onOpenExportShare,
-  onOpenNewProject
+  onOpenExportShare
 }) {
   const { isAdmin, toggleAdmin, activeProject } = usePlaybookData();
   const { t } = useSuiteDictionary();
@@ -159,11 +157,6 @@ export default function Navbar({
                 )}
               </div>
             </div>
-
-            {/* Selector de Playbooks Multi-Proyecto - Oculto para clientes para evitar leaks */}
-            {!guard.isRestricted && (
-              <ProjectSwitcher onOpenNewProject={onOpenNewProject} />
-            )}
           </div>
         </div>
 
