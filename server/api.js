@@ -12,17 +12,21 @@ import {
   revokeTokenInDb,
   getAuditLogsFromDb,
   recordAuditInDb,
-  isDbConnected
+  isDbConnected,
+  getDbStatus
 } from './db.js';
 
 const router = express.Router();
 
 // Health check
 router.get('/health', (req, res) => {
+  const dbInfo = getDbStatus();
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    postgresActive: isDbConnected(),
+    postgresActive: dbInfo.postgresActive,
+    detectedEnvVar: dbInfo.detectedEnvVar,
+    dbError: dbInfo.initError,
     environment: process.env.NODE_ENV || 'production'
   });
 });

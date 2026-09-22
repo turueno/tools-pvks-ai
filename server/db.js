@@ -16,6 +16,8 @@ const LOCAL_STORE_FILE = path.join(DATA_DIR, 'cloud_store.json');
 // Variables de estado
 let pgPool = null;
 let isPostgresActive = false;
+let dbInitError = null;
+let detectedUrlName = null;
 let fileCache = {
   dictionary: {},
   playbooks: {},
@@ -56,17 +58,27 @@ function saveFileStore() {
 export async function initDatabase() {
   initFileStore();
 
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString =
+    process.env.DATABASE_URL ||
+    process.env.DATABASE_PRIVATE_URL ||
+    process.env.DATABASE_PUBLIC_URL ||
+    (process.env.PGHOST ? `postgresql://${process.env.PGUSER || 'postgres'}:${process.env.PGPASSWORD || ''}@${process.env.PGHOST}:${process.env.PGPORT || 5432}/${process.env.PGDATABASE || 'railway'}` : null);
+
+  if (process.env.DATABASE_URL) detectedUrlName = 'DATABASE_URL';
+  else if (process.env.DATABASE_PRIVATE_URL) detectedUrlName = 'DATABASE_PRIVATE_URL';
+  else if (process.env.DATABASE_PUBLIC_URL) detectedUrlName = 'DATABASE_PUBLIC_URL';
+  else if (process.env.PGHOST) detectedUrlName = 'PGHOST';
+
   if (!connectionString) {
     console.log('[DB] DATABASE_URL no detectada. Operando en modo archivo de persistencia local.');
     return { type: 'file', active: true };
   }
 
   try {
-    console.log('[DB] Conectando a PostgreSQL de Railway...');
+    console.log(`[DB] Conectando a PostgreSQL de Railway usando ${detectedUrlName}...`);
     pgPool = new Pool({
       connectionString,
-      ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false },
+      ssl: connectionString.includes('localhost') || connectionString.includes('.railway.internal') ? false : { rejectUnauthorized: false },
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000
@@ -106,11 +118,12 @@ export async function initDatabase() {
 
     client.release();
     isPostgresActive = true;
+    dbInitError = null;
     console.log('[DB] Esquema relacional de tablas verificado.');
     return { type: 'postgres', active: true };
   } catch (err) {
     console.error('[DB] Fallo al conectar con PostgreSQL:', err.message);
-    console.log('[DB] Continuando con almacén de respaldo local para garantizar disponibilidad.');
+    dbInitError = err.message;
     isPostgresActive = false;
     return { type: 'file_fallback', active: true, error: err.message };
   }
@@ -319,4 +332,12 @@ export async function recordAuditInDb(auditObj) {
 
 export function isDbConnected() {
   return isPostgresActive;
+}
+
+export function getDbStatus() {
+  return {
+    postgresActive: isPostgresActive,
+    detectedEnvVar: detectedUrlName,
+    initError: dbInitError
+  };
 }
