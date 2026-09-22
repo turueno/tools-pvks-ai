@@ -40,15 +40,25 @@ app.use((req, res) => {
   res.sendFile(path.join(DIST_DIR, 'index.html'));
 });
 
-// Arrancar el servidor HTTP de inmediato (vital para el healthcheck de Railway)
-app.listen(PORT, '0.0.0.0', () => {
+const defaultPort = 80;
+const envPort = process.env.PORT ? parseInt(process.env.PORT, 10) : null;
+
+// Escuchar en el puerto 80 por defecto
+app.listen(defaultPort, '0.0.0.0', () => {
   console.log('----------------------------------------------------');
-  console.log(`🚀 Servidor Tools PVKS AI escuchando en puerto ${PORT}`);
+  console.log(`🚀 Servidor Tools PVKS AI escuchando en http://0.0.0.0:${defaultPort}`);
   console.log(`✓ Frontend SPA listo en ${DIST_DIR}`);
   console.log('----------------------------------------------------');
+});
 
-  // Inicializar almacenamiento y base de datos en segundo plano
-  initDatabase().catch(err => {
-    console.error('[DB] Fallo inicializando almacenamiento:', err.message);
+// Si Railway pasa un puerto dinámico diferente vía $PORT, escuchar también allí
+if (envPort && envPort !== defaultPort) {
+  app.listen(envPort, '0.0.0.0', () => {
+    console.log(`🚀 Servidor escuchando también en http://0.0.0.0:${envPort} (variable PORT)`);
   });
+}
+
+// Inicializar almacenamiento y base de datos en segundo plano
+initDatabase().catch(err => {
+  console.error('[DB] Fallo inicializando almacenamiento:', err.message);
 });
