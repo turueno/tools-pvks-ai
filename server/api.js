@@ -24,6 +24,8 @@ router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
+    storageMode: dbInfo.storageMode,
+    mountPath: dbInfo.mountPath,
     postgresActive: dbInfo.postgresActive,
     detectedEnvVar: dbInfo.detectedEnvVar,
     connectionSummary: dbInfo.connectionSummary,

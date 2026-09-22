@@ -59,19 +59,21 @@ function saveFileStore() {
 export async function initDatabase() {
   initFileStore();
 
-  const connectionString =
+  const rawConnection =
     process.env.DATABASE_URL ||
     process.env.DATABASE_PRIVATE_URL ||
     process.env.DATABASE_PUBLIC_URL ||
     (process.env.PGHOST ? `postgresql://${process.env.PGUSER || 'postgres'}:${process.env.PGPASSWORD || ''}@${process.env.PGHOST}:${process.env.PGPORT || 5432}/${process.env.PGDATABASE || 'railway'}` : null);
 
-  if (process.env.DATABASE_URL) detectedUrlName = 'DATABASE_URL';
-  else if (process.env.DATABASE_PRIVATE_URL) detectedUrlName = 'DATABASE_PRIVATE_URL';
-  else if (process.env.DATABASE_PUBLIC_URL) detectedUrlName = 'DATABASE_PUBLIC_URL';
-  else if (process.env.PGHOST) detectedUrlName = 'PGHOST';
+  const connectionString = (rawConnection && rawConnection.trim().length > 0) ? rawConnection.trim() : null;
+
+  if (process.env.DATABASE_URL && process.env.DATABASE_URL.trim()) detectedUrlName = 'DATABASE_URL';
+  else if (process.env.DATABASE_PRIVATE_URL && process.env.DATABASE_PRIVATE_URL.trim()) detectedUrlName = 'DATABASE_PRIVATE_URL';
+  else if (process.env.DATABASE_PUBLIC_URL && process.env.DATABASE_PUBLIC_URL.trim()) detectedUrlName = 'DATABASE_PUBLIC_URL';
+  else if (process.env.PGHOST && process.env.PGHOST.trim()) detectedUrlName = 'PGHOST';
 
   if (!connectionString) {
-    console.log('[DB] DATABASE_URL no detectada. Operando en modo archivo de persistencia local.');
+    console.log('[DB] Operando en modo Disco Persistente / Almacén Cloud (/app/data).');
     return { type: 'file', active: true };
   }
 
@@ -343,6 +345,8 @@ export function isDbConnected() {
 
 export function getDbStatus() {
   return {
+    storageMode: isPostgresActive ? 'PostgreSQL' : 'Persistent Volume / Cloud Store',
+    mountPath: '/app/data',
     postgresActive: isPostgresActive,
     detectedEnvVar: detectedUrlName,
     connectionSummary: maskedConnectionSummary,
