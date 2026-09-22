@@ -12,35 +12,21 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM nginx:alpine AS runner
-WORKDIR /usr/share/nginx/html
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=80
 
-# Clean default nginx files
-RUN rm -rf ./*
+# Copiar dependencias de producción
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
 
-# Copy built static files
-COPY --from=builder /app/dist ./
+# Copiar el servidor Node.js y los archivos compilados del frontend
+COPY server.js ./
+COPY server ./server
+COPY --from=builder /app/dist ./dist
 
-# NGINX configuration for Single Page Application routing (SPA)
-RUN printf 'server {\n\
-    listen 80;\n\
-    server_name _;\n\
-    root /usr/share/nginx/html;\n\
-    index index.html;\n\
-    client_max_body_size 50M;\n\
-\n\
-    location / {\n\
-        try_files $uri $uri/ /index.html;\n\
-    }\n\
-\n\
-    # Cache static assets\n\
-    location ~* \.(?:ico|css|js|gif|jpe?g|png|svg|woff2?|eot|ttf|otf)$ {\n\
-        expires 6M;\n\
-        access_log off;\n\
-        add_header Cache-Control "public, max-age=15552000, immutable";\n\
-    }\n\
-}\n' > /etc/nginx/conf.d/default.conf
-
+# Puerto expuesto por defecto (Railway inyectará PORT dinámico)
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server.js"]

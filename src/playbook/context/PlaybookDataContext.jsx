@@ -1,5 +1,5 @@
 // src/playbook/context/PlaybookDataContext.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   EVIDENCES as INITIAL_EVIDENCES,
   INSIGHTS as INITIAL_INSIGHTS,
@@ -21,6 +21,7 @@ import {
   saveStoredActiveProjectId
 } from '../data/projectsRegistry.js';
 import { PlaybookDataContext } from './usePlaybookData.js';
+import { fetchCloudPlaybookData, saveCloudPlaybookData } from '../../logic/sync/pvksSyncClient.js';
 
 const LEGACY_STORAGE_KEY = 'pvks_playbook_data_v2';
 const ADMIN_STORAGE_KEY = 'pvks_playbook_admin_mode';
@@ -149,20 +150,46 @@ export function PlaybookDataProvider({ children }) {
 
   // Colecciones reactivas para el proyecto activo
   const [data, setData] = useState(() => loadProjectData(activeProjectId));
+  const isCloudSyncedRef = useRef(false);
 
-  // Al cambiar de activeProjectId, recargar data del proyecto
+  // Al cambiar de activeProjectId, recargar data del proyecto y consultar la nube
   useEffect(() => {
     saveStoredActiveProjectId(activeProjectId);
     setData(loadProjectData(activeProjectId));
+    isCloudSyncedRef.current = false;
+
+    // Consultar la nube para obtener la versión más reciente
+    fetchCloudPlaybookData(activeProjectId).then(cloudData => {
+      if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
+        setData(prev => {
+          const merged = { ...prev, ...cloudData };
+          try {
+            const scopedKey = getProjectStorageKey(activeProjectId);
+            localStorage.setItem(scopedKey, JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+      }
+      isCloudSyncedRef.current = true;
+    }).catch(() => {
+      isCloudSyncedRef.current = true;
+    });
   }, [activeProjectId]);
 
-  // Guardar en localStorage cuando data cambie (específico del proyecto)
+  // Guardar en localStorage cuando data cambie (específico del proyecto) y enviar a la nube
   useEffect(() => {
     try {
       const scopedKey = getProjectStorageKey(activeProjectId);
       localStorage.setItem(scopedKey, JSON.stringify(data));
     } catch (e) {
       console.error(`Error guardando datos para proyecto ${activeProjectId}:`, e);
+    }
+
+    if (isCloudSyncedRef.current) {
+      const timer = setTimeout(() => {
+        saveCloudPlaybookData(activeProjectId, data);
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, [data, activeProjectId]);
 

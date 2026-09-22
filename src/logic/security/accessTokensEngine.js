@@ -1,8 +1,28 @@
 // src/logic/security/accessTokensEngine.js
 // Motor de emisión, validación y gobierno de tokens seguros para clientes de la Suite PVKS
+import {
+  saveCloudToken,
+  revokeCloudToken,
+  recordCloudAuditEvent,
+  fetchCloudTokens
+} from '../sync/pvksSyncClient.js';
 
 const TOKENS_STORAGE_KEY = 'pvks_issued_tokens_v1';
 const AUDIT_LOG_STORAGE_KEY = 'pvks_audit_log_v1';
+
+// Sincronización proactiva de tokens desde la nube
+export async function syncTokensFromCloud() {
+  try {
+    const cloudTokens = await fetchCloudTokens();
+    if (cloudTokens && Array.isArray(cloudTokens) && cloudTokens.length > 0) {
+      saveIssuedTokens(cloudTokens);
+      return cloudTokens;
+    }
+  } catch (err) {
+    console.debug('Error sincronizando tokens desde la nube:', err.message);
+  }
+  return getIssuedTokens();
+}
 
 export function getIssuedTokens() {
   try {
@@ -83,6 +103,7 @@ export function issueClientToken({
   const existingTokens = getIssuedTokens();
   const updatedTokens = [newTokenRecord, ...existingTokens];
   saveIssuedTokens(updatedTokens);
+  saveCloudToken(newTokenRecord);
 
   // Registrar en el log de auditoría
   recordAuditEvent({
@@ -183,6 +204,7 @@ export function revokeClientToken(tokenId) {
     return t;
   });
   saveIssuedTokens(updated);
+  revokeCloudToken(tokenId);
 
   recordAuditEvent({
     tipo: 'TOKEN_REVOCADO',
@@ -224,6 +246,7 @@ export function recordAuditEvent({ tipo, tokenId, playbookId, cliente, detalles 
     // Mantener los últimos 200 eventos
     const updated = [event, ...existing].slice(0, 200);
     localStorage.setItem(AUDIT_LOG_STORAGE_KEY, JSON.stringify(updated));
+    recordCloudAuditEvent(event);
   } catch (e) {
     console.error('Error al registrar evento de auditoría:', e);
   }

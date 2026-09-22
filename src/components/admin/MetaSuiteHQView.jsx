@@ -4,7 +4,8 @@ import {
   getIssuedTokens,
   issueClientToken,
   revokeClientToken,
-  getAuditLog
+  getAuditLog,
+  syncTokensFromCloud
 } from '../../logic/security/accessTokensEngine.js';
 import { getSuitePlaybooks } from '../../data/suitePlaybooksRegistry.js';
 
@@ -14,6 +15,14 @@ export default function MetaSuiteHQView({ onBackToPortal }) {
   const [playbooks] = useState(() => getSuitePlaybooks());
   const [activeTab, setActiveTab] = useState('tokens'); // 'tokens' | 'audit' | 'playbooks'
   const [copySuccessId, setCopySuccessId] = useState(null);
+
+  useEffect(() => {
+    syncTokensFromCloud().then(cloudTokens => {
+      if (cloudTokens && cloudTokens.length > 0) {
+        setTokens(cloudTokens);
+      }
+    });
+  }, []);
 
   // Formulario de emisión de nuevo enlace
   const [form, setForm] = useState({

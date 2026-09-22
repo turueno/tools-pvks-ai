@@ -4,6 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
+import express from 'express';
+import apiRouter from './server/api.js';
+import { initDatabase } from './server/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -107,7 +110,25 @@ function imageUploadPlugin() {
   };
 }
 
+function apiDevPlugin() {
+  return {
+    name: 'pvks-api-dev-server',
+    async configureServer(server) {
+      try {
+        await initDatabase();
+      } catch (e) {
+        console.warn('DB init warning in dev:', e.message);
+      }
+      const apiApp = express();
+      apiApp.use(express.json({ limit: '50mb' }));
+      apiApp.use(express.urlencoded({ extended: true, limit: '50mb' }));
+      apiApp.use(apiRouter);
+      server.middlewares.use('/api', apiApp);
+    }
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), imageUploadPlugin()],
+  plugins: [react(), imageUploadPlugin(), apiDevPlugin()],
 });

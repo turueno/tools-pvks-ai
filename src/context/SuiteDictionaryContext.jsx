@@ -1,7 +1,8 @@
 // src/context/SuiteDictionaryContext.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SuiteDictionaryContext } from './useSuiteDictionary.js';
 import { UI_DICTIONARY_DEFAULTS } from '../data/uiDictionaryDefaults.js';
+import { fetchCloudDictionary, saveCloudDictionary } from '../logic/sync/pvksSyncClient.js';
 
 const STORAGE_KEY = 'pvks_suite_ui_dictionary_v2';
 const AUTH_SESSION_KEY = 'pvks_is_meta_admin_session';
@@ -22,6 +23,26 @@ export function SuiteDictionaryProvider({ children }) {
     }
     return { ...UI_DICTIONARY_DEFAULTS };
   });
+
+  const isInitialCloudSyncRef = useRef(false);
+
+  // Sincronizar desde la nube al cargar
+  useEffect(() => {
+    fetchCloudDictionary().then(cloudDict => {
+      if (cloudDict && Object.keys(cloudDict).length > 0) {
+        setDictionary(prev => {
+          const merged = { ...UI_DICTIONARY_DEFAULTS, ...prev, ...cloudDict };
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+      }
+      isInitialCloudSyncRef.current = true;
+    }).catch(() => {
+      isInitialCloudSyncRef.current = true;
+    });
+  }, []);
 
   // Estado de autenticación del Meta-Admin
   const [isMetaAdmin, setIsMetaAdmin] = useState(() => {
@@ -46,12 +67,20 @@ export function SuiteDictionaryProvider({ children }) {
   const [isMetaCMSOpen, setIsMetaCMSOpen] = useState(false);
   const [quickEditKey, setQuickEditKey] = useState(null);
 
-  // Sincronizar diccionario a localStorage
+  // Sincronizar diccionario a localStorage y a la nube
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dictionary));
     } catch (e) {
       console.error('Error al persistir diccionario de copys:', e);
+    }
+
+    // Si ya completó la carga inicial, enviar cambios a la nube con debounce
+    if (isInitialCloudSyncRef.current) {
+      const timer = setTimeout(() => {
+        saveCloudDictionary(dictionary);
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [dictionary]);
 
