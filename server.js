@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 80;
 
 // Middlewares
 app.use(cors());
@@ -40,23 +40,15 @@ app.use((req, res) => {
   res.sendFile(path.join(DIST_DIR, 'index.html'));
 });
 
-// Inicializar base de datos y arrancar el servidor
-async function startServer() {
+// Arrancar el servidor HTTP de inmediato (vital para el healthcheck de Railway)
+app.listen(PORT, '0.0.0.0', () => {
   console.log('----------------------------------------------------');
-  console.log('🚀 Iniciando Servidor de Producción Tools PVKS AI...');
+  console.log(`🚀 Servidor Tools PVKS AI escuchando en puerto ${PORT}`);
+  console.log(`✓ Frontend SPA listo en ${DIST_DIR}`);
   console.log('----------------------------------------------------');
 
-  try {
-    await initDatabase();
-  } catch (err) {
-    console.error('Error inicializando almacenamiento:', err.message);
-  }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✓ Servidor escuchando en http://0.0.0.0:${PORT}`);
-    console.log(`✓ Frontend SPA listo en ${DIST_DIR}`);
-    console.log('----------------------------------------------------');
+  // Inicializar almacenamiento y base de datos en segundo plano
+  initDatabase().catch(err => {
+    console.error('[DB] Fallo inicializando almacenamiento:', err.message);
   });
-}
-
-startServer();
+});

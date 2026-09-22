@@ -15,18 +15,18 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=80
 
-# Copiar dependencias de producción
-COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+# Copiar dependencias ya preparadas
+COPY package.json ./
+COPY --from=deps /app/node_modules ./node_modules
 
-# Copiar el servidor Node.js y los archivos compilados del frontend
+# Copiar el servidor Node.js, datos de respaldo y archivos compilados de Vite
 COPY server.js ./
 COPY server ./server
+COPY data ./data
 COPY --from=builder /app/dist ./dist
 
-# Puerto expuesto por defecto (Railway inyectará PORT dinámico)
+# Puerto 80 expuesto por defecto
 EXPOSE 80
 
 CMD ["node", "server.js"]
