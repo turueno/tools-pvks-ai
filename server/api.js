@@ -26,6 +26,7 @@ router.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     postgresActive: dbInfo.postgresActive,
     detectedEnvVar: dbInfo.detectedEnvVar,
+    connectionSummary: dbInfo.connectionSummary,
     dbError: dbInfo.initError,
     environment: process.env.NODE_ENV || 'production'
   });

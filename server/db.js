@@ -18,6 +18,7 @@ let pgPool = null;
 let isPostgresActive = false;
 let dbInitError = null;
 let detectedUrlName = null;
+let maskedConnectionSummary = null;
 let fileCache = {
   dictionary: {},
   playbooks: {},
@@ -72,6 +73,12 @@ export async function initDatabase() {
   if (!connectionString) {
     console.log('[DB] DATABASE_URL no detectada. Operando en modo archivo de persistencia local.');
     return { type: 'file', active: true };
+  }
+
+  if (connectionString.startsWith('postgres://') || connectionString.startsWith('postgresql://')) {
+    maskedConnectionSummary = connectionString.replace(/:[^:@]+@/, ':****@');
+  } else {
+    maskedConnectionSummary = `NON_URL_FORMAT: "${connectionString.substring(0, 60)}"`;
   }
 
   try {
@@ -338,6 +345,7 @@ export function getDbStatus() {
   return {
     postgresActive: isPostgresActive,
     detectedEnvVar: detectedUrlName,
+    connectionSummary: maskedConnectionSummary,
     initError: dbInitError
   };
 }
