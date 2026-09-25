@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SuiteDictionaryContext } from './useSuiteDictionary.js';
 import { UI_DICTIONARY_DEFAULTS } from '../data/uiDictionaryDefaults.js';
-import { fetchCloudDictionary, saveCloudDictionary } from '../logic/sync/pvksSyncClient.js';
+import { fetchCloudDictionary, saveCloudDictionary, fetchCloudMasterPass, saveCloudMasterPass } from '../logic/sync/pvksSyncClient.js';
 
 const STORAGE_KEY = 'pvks_suite_ui_dictionary_v2';
 const AUTH_SESSION_KEY = 'pvks_is_meta_admin_session';
@@ -42,6 +42,18 @@ export function SuiteDictionaryProvider({ children }) {
     }).catch(() => {
       isInitialCloudSyncRef.current = true;
     });
+
+    fetchCloudMasterPass().then(cloudPass => {
+      if (cloudPass) {
+        setMasterPass(cloudPass);
+        try {
+          localStorage.setItem(MASTER_PASS_KEY, cloudPass);
+        } catch {}
+      } else {
+        const localPass = localStorage.getItem(MASTER_PASS_KEY) || DEFAULT_PASS;
+        saveCloudMasterPass(localPass);
+      }
+    }).catch(e => console.error("Error al obtener master pass de la nube:", e));
   }, []);
 
   // Estado de autenticación del Meta-Admin
@@ -107,7 +119,10 @@ export function SuiteDictionaryProvider({ children }) {
       return { success: false, error: 'La nueva clave debe tener al menos 4 caracteres.' };
     }
     setMasterPass(newPass);
-    localStorage.setItem(MASTER_PASS_KEY, newPass);
+    try {
+      localStorage.setItem(MASTER_PASS_KEY, newPass);
+    } catch {}
+    saveCloudMasterPass(newPass);
     return { success: true };
   }, []);
 

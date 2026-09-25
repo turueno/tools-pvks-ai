@@ -13,7 +13,9 @@ import {
   getAuditLogsFromDb,
   recordAuditInDb,
   isDbConnected,
-  getDbStatus
+  getDbStatus,
+  getMasterPassFromDb,
+  saveMasterPassToDb
 } from './db.js';
 
 const router = express.Router();
@@ -141,4 +143,28 @@ router.post('/audit', async (req, res) => {
   }
 });
 
+// CONFIGURACIONES (Meta-Admin Master Pass)
+router.get('/settings/master-pass', async (req, res) => {
+  try {
+    const pass = await getMasterPassFromDb();
+    res.json({ success: true, masterPass: pass });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/settings/master-pass', async (req, res) => {
+  try {
+    const { masterPass } = req.body;
+    if (!masterPass) {
+      return res.status(400).json({ success: false, error: 'Contraseña inválida' });
+    }
+    await saveMasterPassToDb(masterPass);
+    res.json({ success: true, message: 'Master Pass actualizado en la nube' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
+

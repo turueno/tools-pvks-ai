@@ -20,6 +20,7 @@ let dbInitError = null;
 let detectedUrlName = null;
 let maskedConnectionSummary = null;
 let fileCache = {
+  settings: {},
   dictionary: {},
   playbooks: {},
   tokens: [],
@@ -98,6 +99,12 @@ export async function initDatabase() {
 
     // Crear tablas automáticas si no existen
     await client.query(`
+      CREATE TABLE IF NOT EXISTS pvks_settings (
+        key VARCHAR(255) PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE TABLE IF NOT EXISTS pvks_dictionary (
         key VARCHAR(255) PRIMARY KEY,
         value TEXT NOT NULL,
@@ -352,4 +359,42 @@ export function getDbStatus() {
     connectionSummary: maskedConnectionSummary,
     initError: dbInitError
   };
+}
+
+// Operaciones para Configuraciones Generales (Meta-Admin Master Pass)
+export async function getMasterPassFromDb() {
+  if (isPostgresActive && pgPool) {
+    try {
+      const res = await pgPool.query("SELECT value FROM pvks_settings WHERE key = 'master_pass'");
+      if (res.rows.length > 0) {
+        return res.rows[0].value;
+      }
+    } catch (e) {
+      console.error('[DB] Error leyendo master_pass de Postgres:', e.message);
+    }
+  }
+  return fileCache.settings?.master_pass || null;
+}
+
+export async function saveMasterPassToDb(password) {
+  if (!password) return false;
+
+  if (!fileCache.settings) fileCache.settings = {};
+  fileCache.settings.master_pass = password;
+  saveFileStore();
+
+  if (isPostgresActive && pgPool) {
+    try {
+      await pgPool.query(`
+        INSERT INTO pvks_settings (key, value, updated_at)
+        VALUES ('master_pass', $1, NOW())
+        ON CONFLICT (key) DO UPDATE
+        SET value = EXCLUDED.value, updated_at = NOW()
+      `, [password]);
+      return true;
+    } catch (e) {
+      console.error('[DB] Error guardando master_pass en Postgres:', e.message);
+    }
+  }
+  return true;
 }

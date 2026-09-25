@@ -141,3 +141,39 @@ export async function recordCloudAuditEvent(event) {
     return false;
   }
 }
+
+/**
+ * Obtener la contraseña maestra de Meta-Admin de la nube
+ */
+export async function fetchCloudMasterPass() {
+  try {
+    const res = await fetch(`${API_BASE}/settings/master-pass`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (json.success && json.masterPass) {
+      return json.masterPass;
+    }
+  } catch (err) {
+    console.debug('[SyncClient] API no accesible para master pass:', err.message);
+  }
+  return null;
+}
+
+/**
+ * Guardar la contraseña maestra de Meta-Admin en la nube
+ */
+export async function saveCloudMasterPass(masterPass) {
+  if (!masterPass) return false;
+  try {
+    const res = await fetch(`${API_BASE}/settings/master-pass`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ masterPass })
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[SyncClient] Error al sincronizar master pass con la nube:', err.message);
+    return false;
+  }
+}
+
