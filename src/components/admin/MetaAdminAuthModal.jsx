@@ -120,7 +120,7 @@ export default function MetaAdminAuthModal() {
               </div>
             ) : (
               <div style={{ color: '#94A3B8', fontSize: '0.74rem', marginTop: '6px' }}>
-                💡 Clave por defecto inicial: <code style={{ backgroundColor: '#F1F5F9', padding: '1px 5px', borderRadius: '4px', color: '#0F172A', fontWeight: 700 }}>pvks2026</code>
+                🔒 Si no la has cambiado, la clave inicial es: <code style={{ backgroundColor: '#F1F5F9', padding: '1px 5px', borderRadius: '4px', color: '#0F172A', fontWeight: 700 }}>pvks2026</code>
               </div>
             )}
           </div>
