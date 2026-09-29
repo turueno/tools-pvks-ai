@@ -27,6 +27,7 @@ import { mapEntityToScenario } from './engine/scenarioBridge.js';
 import { mapEntityToAIOperation } from './engine/aiBridge.js';
 import { usePlaybookData } from './context/usePlaybookData.js';
 import { useAccessGuard } from '../context/AccessGuardContext.jsx';
+import { usePresence } from '../logic/security/usePresence.js';
 
 export default function PlaybookApp({ activePlaybookId, activePlaybook, onBackToPortal }) {
   return (
@@ -37,6 +38,9 @@ export default function PlaybookApp({ activePlaybookId, activePlaybook, onBackTo
 }
 
 function PlaybookAppInner({ activePlaybook, onBackToPortal }) {
+  const guard = useAccessGuard();
+  usePresence(guard);
+
   const [currentView, setCurrentView] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('ALL');

@@ -28,6 +28,7 @@ import ToolkitPreCheckTester from './components/ToolkitPreCheckTester.jsx';
 import { SNTDDataProvider, useSNTDData } from './context/SNTDDataContext.jsx';
 import SNTDAdminView from './components/SNTDAdminView.jsx';
 import SNTDEditModal from './components/SNTDEditModal.jsx';
+import { usePresence } from '../../logic/security/usePresence.js';
 
 export default function SNTDPlaybookApp({ onBackToPortal }) {
   return (
@@ -39,6 +40,7 @@ export default function SNTDPlaybookApp({ onBackToPortal }) {
 
 function SNTDPlaybookInner({ onBackToPortal }) {
   const guard = useAccessGuard();
+  usePresence(guard);
   const {
     data,
     evidences,
