@@ -27,7 +27,7 @@ import { mapEntityToScenario } from './engine/scenarioBridge.js';
 import { mapEntityToAIOperation } from './engine/aiBridge.js';
 import { usePlaybookData } from './context/usePlaybookData.js';
 import { useAccessGuard } from '../context/AccessGuardContext.jsx';
-import { usePresence } from '../logic/security/usePresence.js';
+import { useTelemetry } from '../logic/sync/useTelemetry.js';
 
 export default function PlaybookApp({ activePlaybookId, activePlaybook, onBackToPortal }) {
   return (
@@ -50,7 +50,7 @@ function PlaybookAppInner({ activePlaybook, onBackToPortal }) {
   const [incomingOppDraft, setIncomingOppDraft] = useState(null);
   const { data } = usePlaybookData();
   const guard = useAccessGuard();
-  usePresence(guard);
+  useTelemetry(guard, currentView);
 
   const handleInspectEntity = (entity) => {
     setInspectedEntity(entity);

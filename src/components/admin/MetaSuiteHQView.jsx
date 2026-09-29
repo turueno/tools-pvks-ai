@@ -13,11 +13,8 @@ export default function MetaSuiteHQView({ onBackToPortal }) {
   const [tokens, setTokens] = useState(() => getIssuedTokens());
   const [auditLogs, setAuditLogs] = useState(() => getAuditLog());
   const [playbooks] = useState(() => getSuitePlaybooks());
-  const [activeTab, setActiveTab] = useState('radar'); // 'radar' | 'tokens' | 'audit' | 'playbooks'
+  const [activeTab, setActiveTab] = useState('tokens'); // 'tokens' | 'audit' | 'playbooks'
   const [copySuccessId, setCopySuccessId] = useState(null);
-  
-  // Radar state
-  const [liveSessions, setLiveSessions] = useState([]);
 
   useEffect(() => {
     syncTokensFromCloud().then(cloudTokens => {
@@ -25,20 +22,6 @@ export default function MetaSuiteHQView({ onBackToPortal }) {
         setTokens(cloudTokens);
       }
     });
-
-    // Polling del Radar en Vivo
-    const fetchRadar = () => {
-      fetch('/api/presence/active')
-        .then(r => r.json())
-        .then(d => {
-          if (d.success) setLiveSessions(d.sessions || []);
-        })
-        .catch(() => {});
-    };
-    
-    fetchRadar();
-    const interval = setInterval(fetchRadar, 10000);
-    return () => clearInterval(interval);
   }, []);
 
   // Formulario de emisión de nuevo enlace
@@ -136,21 +119,6 @@ export default function MetaSuiteHQView({ onBackToPortal }) {
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              onClick={() => setActiveTab('radar')}
-              style={{
-                backgroundColor: activeTab === 'radar' ? '#1E293B' : '#FFFFFF',
-                color: activeTab === 'radar' ? '#FFFFFF' : '#475569',
-                border: '1px solid #CBD5E1',
-                borderRadius: '10px',
-                padding: '8px 16px',
-                fontSize: '0.84rem',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              📡 Radar en Vivo
-            </button>
-            <button
               onClick={() => setActiveTab('tokens')}
               style={{
                 backgroundColor: activeTab === 'tokens' ? '#1E293B' : '#FFFFFF',
@@ -182,68 +150,6 @@ export default function MetaSuiteHQView({ onBackToPortal }) {
             </button>
           </div>
         </div>
-
-        {/* TAB RADAR: MONITOREO EN VIVO */}
-        {activeTab === 'radar' && (
-          <div style={{ backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '2rem', border: '1px solid #E2E8F0', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
-              <div style={{ position: 'relative' }}>
-                <span style={{ fontSize: '2rem' }}>📡</span>
-                <span className="pulse-dot" style={{ position: 'absolute', top: 0, right: 0, width: '12px', height: '12px', backgroundColor: '#10B981', borderRadius: '50%', border: '2px solid white' }}></span>
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900, color: '#191919' }}>Radar en Vivo</h3>
-                <p style={{ margin: 0, fontSize: '0.86rem', color: '#64748B' }}>Clientes actualmente conectados a un Playbook</p>
-              </div>
-            </div>
-
-            {liveSessions.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: 0.5 }}>😴</div>
-                <h4 style={{ margin: 0, color: '#475569', fontSize: '1.1rem' }}>No hay clientes conectados</h4>
-                <p style={{ margin: '0.5rem 0 0 0', color: '#94A3B8', fontSize: '0.86rem' }}>El radar no detecta actividad reciente en los enlaces emitidos.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                {liveSessions.map(session => {
-                  const isActive = session.status === 'active';
-                  const isBackground = session.status === 'background';
-                  
-                  return (
-                    <div key={session.tokenId} style={{ 
-                      padding: '1.25rem', 
-                      borderRadius: '16px', 
-                      border: `1px solid ${isActive ? '#A7F3D0' : '#FEF08A'}`,
-                      backgroundColor: isActive ? '#ECFDF5' : '#FEFCE8',
-                      position: 'relative'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem' }}>
-                        <div style={{ 
-                          width: '10px', height: '10px', borderRadius: '50%', 
-                          backgroundColor: isActive ? '#10B981' : '#EAB308',
-                          boxShadow: isActive ? '0 0 8px #10B981' : 'none'
-                        }}></div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: isActive ? '#065F46' : '#854D0E' }}>
-                          {isActive ? 'VIENDO AHORA' : isBackground ? 'EN SEGUNDO PLANO' : 'INACTIVO'}
-                        </span>
-                      </div>
-                      
-                      <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#1E293B', marginBottom: '4px' }}>
-                        {session.cliente}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>
-                        ID: {session.tokenId.substring(0, 8)}...
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '0.5rem', padding: '0.5rem', backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: '8px' }}>
-                        {playbooks.find(p => p.id === session.playbookId)?.titulo || session.playbookId}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* TAB 1: GESTIÓN DE ENLACES & EMISIÓN */}
         {activeTab === 'tokens' && (

@@ -28,7 +28,7 @@ import ToolkitPreCheckTester from './components/ToolkitPreCheckTester.jsx';
 import { SNTDDataProvider, useSNTDData } from './context/SNTDDataContext.jsx';
 import SNTDAdminView from './components/SNTDAdminView.jsx';
 import SNTDEditModal from './components/SNTDEditModal.jsx';
-import { usePresence } from '../../logic/security/usePresence.js';
+import { useTelemetry } from '../../logic/sync/useTelemetry.js';
 
 export default function SNTDPlaybookApp({ onBackToPortal }) {
   return (
@@ -40,7 +40,6 @@ export default function SNTDPlaybookApp({ onBackToPortal }) {
 
 function SNTDPlaybookInner({ onBackToPortal }) {
   const guard = useAccessGuard();
-  usePresence(guard);
   const {
     data,
     evidences,
@@ -55,6 +54,7 @@ function SNTDPlaybookInner({ onBackToPortal }) {
   } = useSNTDData();
 
   const [currentTab, setCurrentTab] = useState('overview');
+  useTelemetry(guard, currentTab);
   const [selectedPlaza, setSelectedPlaza] = useState('ALL');
   const [selectedGateway, setSelectedGateway] = useState('ALL');
   const [selectedBrand, setSelectedBrand] = useState('ALL');

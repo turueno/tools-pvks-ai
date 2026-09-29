@@ -177,39 +177,6 @@ router.get('/ingest/sessions', (req, res) => {
   }
 });
 
-// --- SISTEMA DE PRESENCIA EN VIVO (HEARTBEAT) ---
-const activeSessions = {};
-
-// Recibir latido del cliente
-router.post('/presence/heartbeat', (req, res) => {
-  const { tokenId, playbookId, cliente, status } = req.body;
-  if (!tokenId) return res.status(400).json({ error: 'Falta token' });
-
-  activeSessions[tokenId] = {
-    playbookId,
-    cliente,
-    status, // 'active', 'idle', 'background'
-    lastSeen: Date.now()
-  };
-  res.json({ success: true });
-});
-
-// Meta-Admin: Consultar quién está online (y limpiar inactivos)
-router.get('/presence/active', (req, res) => {
-  const now = Date.now();
-  const online = [];
-  
-  for (const [tokenId, session] of Object.entries(activeSessions)) {
-    // Si pasaron más de 35 segundos sin latido, se asume que cerró la pestaña
-    if (now - session.lastSeen > 35000) {
-      delete activeSessions[tokenId];
-    } else {
-      online.push({ tokenId, ...session });
-    }
-  }
-  res.json({ success: true, sessions: online });
-});
-
 // Health check
 router.get('/health', (req, res) => {
   const dbInfo = getDbStatus();
