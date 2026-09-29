@@ -38,9 +38,6 @@ export default function PlaybookApp({ activePlaybookId, activePlaybook, onBackTo
 }
 
 function PlaybookAppInner({ activePlaybook, onBackToPortal }) {
-  const guard = useAccessGuard();
-  usePresence(guard);
-
   const [currentView, setCurrentView] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('ALL');
@@ -53,6 +50,7 @@ function PlaybookAppInner({ activePlaybook, onBackToPortal }) {
   const [incomingOppDraft, setIncomingOppDraft] = useState(null);
   const { data } = usePlaybookData();
   const guard = useAccessGuard();
+  usePresence(guard);
 
   const handleInspectEntity = (entity) => {
     setInspectedEntity(entity);
