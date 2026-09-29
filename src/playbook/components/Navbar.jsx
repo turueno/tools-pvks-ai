@@ -7,6 +7,7 @@ import { useSuiteDictionary } from '../../context/useSuiteDictionary.js';
 import EditableText from '../../components/shared/EditableText.jsx';
 import MetaAdminPill from '../../components/admin/MetaAdminPill.jsx';
 import { useAccessGuard } from '../../context/AccessGuardContext.jsx';
+import { ALL_MODULES_MAP } from '../../data/modulesCatalog.js';
 
 export default function Navbar({
   currentView,
@@ -18,26 +19,49 @@ export default function Navbar({
   selectedEpistemic,
   onSelectEpistemic,
   onBackToPortal,
-  onOpenExportShare
+  onOpenExportShare,
+  activePlaybook
 }) {
   const { isAdmin, toggleAdmin, activeProject } = usePlaybookData();
   const { t } = useSuiteDictionary();
   const guard = useAccessGuard();
 
-  const navItems = [
-    { id: 'overview', dictKey: 'navbar.tabs.overview', label: 'Overview', icon: 'overview' },
-    { id: 'evidence', dictKey: 'navbar.tabs.evidence', label: 'Evidence Library', icon: 'evidence' },
-    { id: 'insights', dictKey: 'navbar.tabs.insights', label: 'Insight Cards', icon: 'cards' },
-    { id: 'system-map', dictKey: 'navbar.tabs.systemMap', label: 'System Maps', icon: 'network' },
-    { id: 'tensions', dictKey: 'navbar.tabs.tensions', label: 'Tension Explorer', icon: 'tension' },
-    { id: 'decisions', dictKey: 'navbar.tabs.decisions', label: 'Decision Explorer', icon: 'decision' },
-    { id: 'transitions', dictKey: 'navbar.tabs.transitions', label: 'Transition Explorer', icon: 'transition' },
-    { id: 'scenario', dictKey: 'navbar.tabs.scenario', label: 'Scenario Lab', icon: 'scenario', highlight: true },
-    { id: 'opportunities', dictKey: 'navbar.tabs.opportunities', label: 'Opportunity Builder', icon: 'opportunity' },
-    { id: 'matrix', dictKey: 'navbar.tabs.matrix', label: 'Matriz 3 Marcas', icon: 'matrix' },
-    { id: 'ai', dictKey: 'navbar.tabs.ai', label: 'Asistente IA', icon: 'ai', special: true },
-    ...(!guard.isRestricted ? [{ id: 'admin', dictKey: 'navbar.tabs.admin', label: 'Admin (CMS)', icon: 'settings', adminBadge: true }] : [])
+  const rawEnabled = activePlaybook?.enabledModules || activeProject?.enabledModules || [
+    'overview', 'evidence', 'insights', 'system-map', 'tensions', 'decisions', 'transitions', 'scenario', 'opportunities', 'matrix', 'ai'
   ];
+  const isPAC = activePlaybook?.tipo === 'pac' || activePlaybook?.id === 'pac-model-generator';
+  const isSNTD = activePlaybook?.tipo === 'sntd' || activePlaybook?.id === 'sntd-diagnostic';
+
+  const enabledModuleIds = [...rawEnabled];
+  if (!isPAC && !isSNTD && !enabledModuleIds.includes('matrix')) {
+    const aiIdx = enabledModuleIds.indexOf('ai');
+    if (aiIdx >= 0) {
+      enabledModuleIds.splice(aiIdx, 0, 'matrix');
+    } else {
+      enabledModuleIds.push('matrix');
+    }
+  }
+
+  const dynamicNavItems = enabledModuleIds.map(id => {
+    const mod = ALL_MODULES_MAP[id];
+    return {
+      id,
+      label: mod?.nombre || id,
+      icon: mod?.icono || 'cards',
+      badge: mod?.badge
+    };
+  });
+
+  if (!guard.isRestricted) {
+    dynamicNavItems.push({
+      id: 'admin',
+      label: 'Admin (CMS)',
+      icon: 'settings',
+      adminBadge: true
+    });
+  }
+
+  const navItems = dynamicNavItems;
 
   return (
     <header
@@ -50,6 +74,63 @@ export default function Navbar({
         boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
       }}
     >
+      {/* Banner de Borrador FPO y Conexión con Antigravity */}
+      {activePlaybook?.status === 'fpo_draft' && (
+        <div
+          style={{
+            backgroundColor: '#FFFBEB',
+            borderBottom: '1px solid #FDE68A',
+            padding: '7px 1.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#92400E' }}>
+            <span style={{ fontSize: '0.95rem' }}>🟡</span>
+            <span>
+              <strong>BORRADOR FPO ACTIVO:</strong> Estructura base generada de los inputs. Archivos persistidos en <code style={{ backgroundColor: '#FEF3C7', padding: '1px 5px', borderRadius: '4px' }}>data/ingest_sessions/{activePlaybook.sessionId || 'sesion'}/</code>
+            </span>
+          </div>
+
+          <button
+            onClick={() => {
+              const pTitle = activePlaybook.titulo || 'Playbook';
+              const pId = activePlaybook.id;
+              const pSession = activePlaybook.sessionId || activePlaybook.id;
+              const pModules = (activePlaybook.enabledModules || []).join(', ');
+              const prompt = `Antigravity, por favor procesa y sintetiza profundamente el Playbook '${pTitle}' (ID: '${pId}', sessionId: '${pSession}').
+Los insumos se encuentran en 'data/ingest_sessions/${pSession}/' (revisa 'extracted_text.txt' y 'draft_dataset.json').
+Tareas requeridas:
+1. Sustituye todos los placeholders [FPO] por síntesis cualitativa definitiva basada en los insumos (Evidencias Nivel 1 OBSERVADO, Insights Nivel 2 DERIVADO, Tensiones Dialécticas, Cadenas de Decisión, Transiciones, Matriz de Marcas y Oportunidades Nivel 3 HIPÓTESIS).
+2. Guarda el dataset completo en 'data/cloud_store.json' bajo la clave '${pId}' y crea 'data/ingest_sessions/${pSession}/published_dataset.json'.
+3. Actualiza el status del Playbook en el registro a 'status: "published"'.
+Módulos habilitados a validar: ${pModules}.`;
+              navigator.clipboard.writeText(prompt);
+              alert('✅ ¡Instrucción copiada al portapapeles!\nPégala aquí en el chat de Antigravity para iniciar la síntesis profunda.');
+            }}
+            style={{
+              backgroundColor: '#D97706',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '5px 12px',
+              fontSize: '0.76rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(217, 119, 6, 0.2)'
+            }}
+          >
+            🤖 Copiar Instrucción para Antigravity
+          </button>
+        </div>
+      )}
+
       {/* Top Brand Bar */}
       <div
         style={{
@@ -221,7 +302,7 @@ export default function Navbar({
               width: 'auto'
             }}
           >
-            <option value="ALL">Todas las marcas</option>
+            <option value="ALL">{t('navbar.filters.brandAll', 'Todas las marcas')}</option>
             {BRANDS.map(b => (
               <option key={b} value={b}>{b}</option>
             ))}
@@ -244,10 +325,10 @@ export default function Navbar({
               width: 'auto'
             }}
           >
-            <option value="ALL">Todos los niveles</option>
-            <option value="OBSERVADO">OBSERVADO</option>
-            <option value="DERIVADO">DERIVADO</option>
-            <option value="HIPOTESIS">HIPÓTESIS</option>
+            <option value="ALL">{t('navbar.filters.epistemicAll', 'Todos los niveles')}</option>
+            <option value="OBSERVADO">{t('navbar.filters.observado', 'OBSERVADO')}</option>
+            <option value="DERIVADO">{t('navbar.filters.derivado', 'DERIVADO')}</option>
+            <option value="HIPOTESIS">{t('navbar.filters.hipotesis', 'HIPÓTESIS')}</option>
           </select>
 
           {/* Export & Share Modal Trigger */}
@@ -280,7 +361,7 @@ export default function Navbar({
             }}
           >
             <Icon name="printer" size={14} color="#F6911E" />
-            <span>Exportar / Compartir</span>
+            <span><EditableText dictKey="navbar.btn.exportShare" defaultText="Exportar / Compartir" /></span>
           </button>
 
           {/* Admin Toggle (Contenidos) - Oculto en modo cliente restringido */}
@@ -304,7 +385,7 @@ export default function Navbar({
                 whiteSpace: 'nowrap'
               }}
             >
-              <span>{isAdmin ? '🛡️ Admin: ACTIVO' : '🔒 Admin: OFF'}</span>
+              <span>{isAdmin ? t('navbar.btn.adminActive', '🛡️ Admin: ACTIVO') : t('navbar.btn.adminOff', '🔒 Admin: OFF')}</span>
             </button>
           )}
 

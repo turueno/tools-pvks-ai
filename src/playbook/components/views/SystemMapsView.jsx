@@ -3,11 +3,13 @@ import React, { useState, useMemo } from 'react';
 import { Icon } from '../shared/Icons.jsx';
 import InfoTooltip from '../shared/InfoTooltip.jsx';
 import EditableText from '../../../components/shared/EditableText.jsx';
+import { useSuiteDictionary } from '../../../context/useSuiteDictionary.js';
 import { buildSystemGraph, getEntityConnections } from '../../engine/relationEngine.js';
 import { usePlaybookData } from '../../context/usePlaybookData.js';
 
 export default function SystemMapsView({ onInspectEntity, onSimulateEntity }) {
   const { data } = usePlaybookData();
+  const { t } = useSuiteDictionary();
   const { nodes: rawNodes, edges: rawEdges } = useMemo(() => buildSystemGraph(data), [data]);
   const [selectedNodeType, setSelectedNodeType] = useState('ALL');
   const [selectedNodeId, setSelectedNodeId] = useState(null);
@@ -257,7 +259,7 @@ export default function SystemMapsView({ onInspectEntity, onSimulateEntity }) {
                     fontWeight="800"
                     letterSpacing="0.5"
                   >
-                    {col.title}
+                    {t(`playbook.maps.col.${col.id}.title`, col.title)}
                   </text>
                   <text
                     x={10}
@@ -266,7 +268,7 @@ export default function SystemMapsView({ onInspectEntity, onSimulateEntity }) {
                     fontSize="8.5"
                     fontWeight="500"
                   >
-                    {col.subtitle}
+                    {t(`playbook.maps.col.${col.id}.sub`, col.subtitle)}
                   </text>
                 </g>
               ))}

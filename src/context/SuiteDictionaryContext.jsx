@@ -154,6 +154,15 @@ export function SuiteDictionaryProvider({ children }) {
     }));
   }, []);
 
+  // Eliminar una clave personalizada del diccionario
+  const deleteKey = useCallback((key) => {
+    setDictionary(prev => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
+  }, []);
+
   // Restablecer una sección completa a fábrica
   const resetSection = useCallback((prefix) => {
     setDictionary(prev => {
@@ -215,6 +224,7 @@ export function SuiteDictionaryProvider({ children }) {
     t,
     updateText,
     resetText,
+    deleteKey,
     resetSection,
     resetAll,
     exportDictionaryJSON,

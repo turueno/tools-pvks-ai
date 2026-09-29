@@ -10,6 +10,7 @@ export default function MetaAdminCMSModal() {
     closeMetaCMS,
     updateText,
     resetText,
+    deleteKey,
     resetAll,
     exportDictionaryJSON,
     importDictionaryJSON,
@@ -26,17 +27,27 @@ export default function MetaAdminCMSModal() {
   const [confirmPass, setConfirmPass] = useState('');
   const [passMsg, setPassMsg] = useState({ type: '', text: '' });
 
+  // Formulario de nueva clave personalizada
+  const [showAddKey, setShowAddKey] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyValue, setNewKeyValue] = useState('');
+  const [newKeyError, setNewKeyError] = useState('');
+
   // Input de edición en fila
   const [editingRows, setEditingRows] = useState({});
 
-  // Lista normalizada de todas las claves
+  // Lista normalizada de todas las claves (defaults + añadidas en runtime)
   const allKeys = useMemo(() => {
-    return Object.keys(UI_DICTIONARY_DEFAULTS);
-  }, []);
+    const keySet = new Set([...Object.keys(UI_DICTIONARY_DEFAULTS), ...Object.keys(dictionary || {})]);
+    return Array.from(keySet).sort();
+  }, [dictionary]);
 
-  // Claves modificadas
+  // Claves modificadas o añadidas
   const modifiedKeysCount = useMemo(() => {
-    return allKeys.filter(k => dictionary[k] && dictionary[k] !== UI_DICTIONARY_DEFAULTS[k]).length;
+    return allKeys.filter(k => {
+      const isCustom = !(k in UI_DICTIONARY_DEFAULTS);
+      return isCustom || (dictionary[k] && dictionary[k] !== UI_DICTIONARY_DEFAULTS[k]);
+    }).length;
   }, [allKeys, dictionary]);
 
   // Filtrado reactivo
@@ -83,6 +94,36 @@ export default function MetaAdminCMSModal() {
       delete copy[key];
       return copy;
     });
+  };
+
+  const handleDeleteRow = (key) => {
+    if (window.confirm(`¿Estás seguro de eliminar la clave "${key}"?`)) {
+      deleteKey(key);
+      setEditingRows(prev => {
+        const copy = { ...prev };
+        delete copy[key];
+        return copy;
+      });
+    }
+  };
+
+  const handleAddKey = (e) => {
+    e.preventDefault();
+    setNewKeyError('');
+    const cleanKey = newKeyName.trim();
+    if (!cleanKey) {
+      setNewKeyError('Debes ingresar un identificador de clave.');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_.-]+$/.test(cleanKey)) {
+      setNewKeyError('La clave solo debe contener letras, números, puntos, guiones o guiones bajos.');
+      return;
+    }
+    updateText(cleanKey, newKeyValue);
+    setNewKeyName('');
+    setNewKeyValue('');
+    setShowAddKey(false);
+    setSearchQuery(cleanKey);
   };
 
   const handleImportFile = (e) => {
@@ -328,7 +369,100 @@ export default function MetaAdminCMSModal() {
                     Limpiar búsqueda
                   </button>
                 )}
+                <button
+                  onClick={() => setShowAddKey(prev => !prev)}
+                  style={{
+                    backgroundColor: showAddKey ? '#0F172A' : '#FFF7ED',
+                    color: showAddKey ? '#FFFFFF' : '#C25E00',
+                    border: '1px solid #F6911E',
+                    padding: '7px 14px',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  {showAddKey ? '✕ Cancelar' : '+ Clave Personalizada'}
+                </button>
               </div>
+
+              {/* Formulario desplegable para añadir clave */}
+              {showAddKey && (
+                <form
+                  onSubmit={handleAddKey}
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #FED7AA',
+                    borderRadius: '10px',
+                    padding: '14px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    boxShadow: '0 4px 12px rgba(246, 145, 30, 0.08)'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#9A3412' }}>
+                      ✨ Registrar Nueva Clave Dinámica en el Diccionario
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                      Disponible para vincular en componentes con <code>&lt;EditableText dictKey="..." /&gt;</code> o <code>t(...)</code>
+                    </span>
+                  </div>
+
+                  {newKeyError && (
+                    <div style={{ color: '#DC2626', fontSize: '0.78rem', fontWeight: 600 }}>
+                      ⚠️ {newKeyError}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) minmax(320px, 2fr) auto', gap: '10px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="Ej: playbook.custom.kpi_banner"
+                      value={newKeyName}
+                      onChange={(e) => setNewKeyName(e.target.value)}
+                      style={{
+                        padding: '7px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #CBD5E1',
+                        fontSize: '0.82rem',
+                        fontFamily: 'monospace'
+                      }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Texto o copy que se mostrará por defecto..."
+                      value={newKeyValue}
+                      onChange={(e) => setNewKeyValue(e.target.value)}
+                      style={{
+                        padding: '7px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #CBD5E1',
+                        fontSize: '0.82rem'
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      style={{
+                        backgroundColor: '#F6911E',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        padding: '7px 16px',
+                        borderRadius: '6px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Guardar Clave
+                    </button>
+                  </div>
+                </form>
+              )}
 
               {/* Pills de Secciones */}
               <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -383,18 +517,19 @@ export default function MetaAdminCMSModal() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {filteredKeys.map(key => {
-                    const defaultVal = UI_DICTIONARY_DEFAULTS[key] || '';
-                    const currentVal = dictionary[key] !== undefined ? dictionary[key] : defaultVal;
+                    const isCustomKey = !(key in UI_DICTIONARY_DEFAULTS);
+                    const defaultVal = !isCustomKey ? UI_DICTIONARY_DEFAULTS[key] : '— (Clave dinámica / personalizada)';
+                    const currentVal = dictionary[key] !== undefined ? dictionary[key] : (isCustomKey ? '' : defaultVal);
                     const isRowEditing = editingRows[key] !== undefined;
                     const rowValue = isRowEditing ? editingRows[key] : currentVal;
-                    const isModified = currentVal !== defaultVal;
+                    const isModified = isCustomKey || currentVal !== defaultVal;
 
                     return (
                       <div
                         key={key}
                         style={{
-                          backgroundColor: isModified ? '#FFFDF8' : '#FFFFFF',
-                          border: isModified ? '1px solid #F6911E' : '1px solid #E2E8F0',
+                          backgroundColor: isCustomKey ? '#F0FDF4' : (isModified ? '#FFFDF8' : '#FFFFFF'),
+                          border: isCustomKey ? '1px solid #86EFAC' : (isModified ? '1px solid #F6911E' : '1px solid #E2E8F0'),
                           borderRadius: '10px',
                           padding: '12px 16px',
                           display: 'grid',
@@ -405,30 +540,36 @@ export default function MetaAdminCMSModal() {
                       >
                         {/* Clave semántica */}
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             <code style={{ fontSize: '0.76rem', color: '#0F172A', fontWeight: 700, wordBreak: 'break-all' }}>
                               {key}
                             </code>
-                            {isModified && (
-                              <span style={{ fontSize: '0.65rem', backgroundColor: '#FFF7ED', color: '#C25E00', border: '1px solid #FFEDD5', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
-                                EDITADO
+                            {isCustomKey ? (
+                              <span style={{ fontSize: '0.65rem', backgroundColor: '#DCFCE7', color: '#15803D', border: '1px solid #BBF7D0', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                PERSONALIZADA
                               </span>
+                            ) : (
+                              isModified && (
+                                <span style={{ fontSize: '0.65rem', backgroundColor: '#FFF7ED', color: '#C25E00', border: '1px solid #FFEDD5', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                                  EDITADO
+                                </span>
+                              )
                             )}
                           </div>
                         </div>
 
                         {/* Valor original de fábrica */}
-                        <div style={{ fontSize: '0.8rem', color: '#64748B', backgroundColor: '#F8FAFC', padding: '6px 10px', borderRadius: '6px', border: '1px solid #F1F5F9', maxHeight: '70px', overflowY: 'auto' }}>
+                        <div style={{ fontSize: '0.8rem', color: isCustomKey ? '#059669' : '#64748B', backgroundColor: isCustomKey ? '#F0FDF4' : '#F8FAFC', padding: '6px 10px', borderRadius: '6px', border: '1px solid #F1F5F9', maxHeight: '70px', overflowY: 'auto' }}>
                           <span style={{ fontSize: '0.66rem', color: '#94A3B8', display: 'block', fontWeight: 700 }}>ORIGINAL FÁBRICA:</span>
                           {defaultVal}
                         </div>
 
                         {/* Editor de valor activo */}
                         <div>
-                          <span style={{ fontSize: '0.66rem', color: '#C25E00', display: 'block', fontWeight: 700, marginBottom: '2px' }}>
+                          <span style={{ fontSize: '0.66rem', color: isCustomKey ? '#15803D' : '#C25E00', display: 'block', fontWeight: 700, marginBottom: '2px' }}>
                             VALOR ACTIVO EN PANTALLA:
                           </span>
-                          {defaultVal.length > 80 ? (
+                          {(typeof defaultVal === 'string' && defaultVal.length > 80) || (typeof rowValue === 'string' && rowValue.length > 80) ? (
                             <textarea
                               rows={2}
                               value={rowValue}
@@ -480,22 +621,40 @@ export default function MetaAdminCMSModal() {
                               Guardar
                             </button>
                           )}
-                          {isModified && (
+                          {isCustomKey ? (
                             <button
-                              onClick={() => handleResetRow(key)}
-                              title="Volver al texto de fábrica"
+                              onClick={() => handleDeleteRow(key)}
+                              title="Eliminar esta clave personalizada del diccionario"
                               style={{
-                                backgroundColor: '#F1F5F9',
-                                color: '#64748B',
-                                border: '1px solid #E2E8F0',
+                                backgroundColor: '#FEF2F2',
+                                color: '#DC2626',
+                                border: '1px solid #FECACA',
                                 padding: '4px 8px',
                                 borderRadius: '6px',
                                 fontSize: '0.72rem',
                                 cursor: 'pointer'
                               }}
                             >
-                              ↺ Fábrica
+                              🗑️ Eliminar
                             </button>
+                          ) : (
+                            isModified && (
+                              <button
+                                onClick={() => handleResetRow(key)}
+                                title="Volver al texto de fábrica"
+                                style={{
+                                  backgroundColor: '#F1F5F9',
+                                  color: '#64748B',
+                                  border: '1px solid #E2E8F0',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.72rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ↺ Fábrica
+                              </button>
+                            )
                           )}
                         </div>
                       </div>

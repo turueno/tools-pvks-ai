@@ -1,6 +1,7 @@
 // src/playbook/components/views/AdminView.jsx
 import React, { useState, useRef } from 'react';
 import { usePlaybookData } from '../../context/usePlaybookData.js';
+import { useSuiteDictionary } from '../../../context/useSuiteDictionary.js';
 import { Icon } from '../shared/Icons.jsx';
 import EpistemicBadge from '../EpistemicBadge.jsx';
 import FieldPhoto from '../shared/FieldPhoto.jsx';
@@ -17,6 +18,7 @@ export default function AdminView() {
     importDataJSON,
     lastUpdated
   } = usePlaybookData();
+  const { t } = useSuiteDictionary();
 
   const [activeTab, setActiveTab] = useState('insights');
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,6 +55,14 @@ export default function AdminView() {
     }
   };
 
+  const kpiCardStyle = {
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #E2E8F0',
+    borderRadius: '12px',
+    padding: '1rem',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+  };
+
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.5rem' }}>
       {/* Header CMS */}
@@ -70,7 +80,7 @@ export default function AdminView() {
             <EditableText dictKey="playbook.admin.title" defaultText="Administrador de Contenidos (CMS)" />
           </h1>
           <p style={{ color: '#475569', fontSize: '0.94rem', margin: '6px 0 0 0', maxWidth: '850px' }}>
-            <EditableText dictKey="playbook.admin.desc" defaultText="Edita textos, verbatims, mecanismos causales, rutas fotográficas y tensiones de todo el Insight Playbook. Los cambios se guardan localmente en tu navegador y pueden respaldarse en formato JSON." multiline={true} />
+            <EditableText dictKey="playbook.admin.desc" defaultText="Edita textos, verbatims, mecanismos causales, rutas fotográficas y tensiones de todo el Playbook. Los cambios se guardan localmente en tu navegador y pueden respaldarse en formato JSON." multiline={true} />
           </p>
         </div>
 
@@ -81,7 +91,7 @@ export default function AdminView() {
             className="secondary-button"
             style={{ fontSize: '0.82rem', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            📥 Exportar JSON
+            <EditableText dictKey="playbook.admin.btn.export" defaultText="📥 Exportar JSON" />
           </button>
 
           <input
@@ -96,7 +106,7 @@ export default function AdminView() {
             className="secondary-button"
             style={{ fontSize: '0.82rem', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            📤 Importar JSON
+            <EditableText dictKey="playbook.admin.btn.import" defaultText="📤 Importar JSON" />
           </button>
 
           <button
@@ -112,7 +122,7 @@ export default function AdminView() {
               cursor: 'pointer'
             }}
           >
-            🔄 Restablecer Fábrica
+            <EditableText dictKey="playbook.admin.btn.reset" defaultText="🔄 Restablecer Fábrica" />
           </button>
         </div>
       </div>
@@ -120,31 +130,45 @@ export default function AdminView() {
       {/* KPI Stats Bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
         <div style={kpiCardStyle}>
-          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Inmersiones Hogar</div>
+          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+            <EditableText dictKey="playbook.admin.kpi.homes" defaultText="Inmersiones / Arquetipos" />
+          </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#C25E00' }}>{(data.homes || []).length}</div>
         </div>
         <div style={kpiCardStyle}>
-          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Evidencias</div>
+          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+            <EditableText dictKey="playbook.admin.kpi.evidences" defaultText="Evidencias" />
+          </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0284c7' }}>{data.evidences.length}</div>
         </div>
         <div style={kpiCardStyle}>
-          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Fichas Insight</div>
+          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+            <EditableText dictKey="playbook.admin.kpi.insights" defaultText="Fichas Insight" />
+          </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F6911E' }}>{data.insights.length}</div>
         </div>
         <div style={kpiCardStyle}>
-          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Tensiones</div>
+          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+            <EditableText dictKey="playbook.admin.kpi.tensions" defaultText="Tensiones" />
+          </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F23F3B' }}>{data.tensions.length}</div>
         </div>
         <div style={kpiCardStyle}>
-          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Transiciones</div>
+          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+            <EditableText dictKey="playbook.admin.kpi.transitions" defaultText="Transiciones" />
+          </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#00B487' }}>{data.transitions.length}</div>
         </div>
         <div style={kpiCardStyle}>
-          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Cadenas Decisión</div>
+          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+            <EditableText dictKey="playbook.admin.kpi.decisions" defaultText="Cadenas Decisión" />
+          </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#775AFF' }}>{data.decisionChains.length}</div>
         </div>
         <div style={kpiCardStyle}>
-          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Marcas en Matriz</div>
+          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+            <EditableText dictKey="playbook.admin.kpi.brandMatrix" defaultText="Marcas en Matriz" />
+          </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#191919' }}>{data.brandMatrix.length}</div>
         </div>
       </div>
@@ -152,13 +176,13 @@ export default function AdminView() {
       {/* Tabs Selector */}
       <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #E2E8F0', paddingBottom: '2px', marginBottom: '1.5rem', overflowX: 'auto' }}>
         {[
-          { id: 'insights', label: `Fichas de Insight (${data.insights.length})`, icon: 'insight' },
-          { id: 'homes', label: `Inmersiones Hogar (${(data.homes || []).length})`, icon: 'home' },
-          { id: 'evidences', label: `Evidencias (${data.evidences.length})`, icon: 'evidence' },
-          { id: 'tensions', label: `Tensiones (${data.tensions.length})`, icon: 'tension' },
-          { id: 'transitions', label: `Transiciones (${data.transitions.length})`, icon: 'transition' },
-          { id: 'decisions', label: `Cadenas Decisión (${data.decisionChains.length})`, icon: 'decision' },
-          { id: 'brandMatrix', label: `Matriz Marcas (${data.brandMatrix.length})`, icon: 'matrix' }
+          { id: 'insights', defaultLabel: 'Fichas de Insight', count: data.insights.length, icon: 'insight' },
+          { id: 'homes', defaultLabel: 'Inmersiones Hogar', count: (data.homes || []).length, icon: 'home' },
+          { id: 'evidences', defaultLabel: 'Evidencias', count: data.evidences.length, icon: 'evidence' },
+          { id: 'tensions', defaultLabel: 'Tensiones', count: data.tensions.length, icon: 'tension' },
+          { id: 'transitions', defaultLabel: 'Transiciones', count: data.transitions.length, icon: 'transition' },
+          { id: 'decisions', defaultLabel: 'Cadenas Decisión', count: data.decisionChains.length, icon: 'decision' },
+          { id: 'brandMatrix', defaultLabel: 'Matriz Marcas', count: data.brandMatrix.length, icon: 'matrix' }
         ].map(tab => {
           const isActive = activeTab === tab.id;
           return (
@@ -182,7 +206,8 @@ export default function AdminView() {
               }}
             >
               <Icon name={tab.icon} size={16} color={isActive ? '#F6911E' : '#64748B'} />
-              {tab.label}
+              <EditableText dictKey={`playbook.admin.tabs.${tab.id}`} defaultText={tab.defaultLabel} />
+              <span style={{ fontSize: '0.78rem', opacity: 0.8 }}>({tab.count})</span>
             </button>
           );
         })}
@@ -192,7 +217,7 @@ export default function AdminView() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '10px' }}>
         <input
           type="text"
-          placeholder="Buscar en esta colección..."
+          placeholder={t('playbook.admin.searchPlaceholder', 'Buscar en esta colección...')}
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           style={{
@@ -211,7 +236,7 @@ export default function AdminView() {
             className="primary-button"
             style={{ fontSize: '0.84rem', padding: '8px 16px' }}
           >
-            + Nueva Evidencia
+            <EditableText dictKey="playbook.admin.btn.newEvidence" defaultText="+ Nueva Evidencia" />
           </button>
         )}
         {activeTab === 'insights' && (
@@ -220,7 +245,43 @@ export default function AdminView() {
             className="primary-button"
             style={{ fontSize: '0.84rem', padding: '8px 16px' }}
           >
-            + Nueva Ficha de Insight
+            <EditableText dictKey="playbook.admin.btn.newInsight" defaultText="+ Nueva Ficha de Insight" />
+          </button>
+        )}
+        {activeTab === 'tensions' && (
+          <button
+            onClick={() => openEditor('tension', null)}
+            className="primary-button"
+            style={{ fontSize: '0.84rem', padding: '8px 16px' }}
+          >
+            <EditableText dictKey="playbook.admin.btn.newTension" defaultText="+ Nueva Tensión" />
+          </button>
+        )}
+        {activeTab === 'transitions' && (
+          <button
+            onClick={() => openEditor('transition', null)}
+            className="primary-button"
+            style={{ fontSize: '0.84rem', padding: '8px 16px' }}
+          >
+            <EditableText dictKey="playbook.admin.btn.newTransition" defaultText="+ Nueva Transición" />
+          </button>
+        )}
+        {activeTab === 'decisions' && (
+          <button
+            onClick={() => openEditor('decision', null)}
+            className="primary-button"
+            style={{ fontSize: '0.84rem', padding: '8px 16px' }}
+          >
+            <EditableText dictKey="playbook.admin.btn.newDecision" defaultText="+ Nueva Cadena de Decisión" />
+          </button>
+        )}
+        {activeTab === 'brandMatrix' && (
+          <button
+            onClick={() => openEditor('brand', null)}
+            className="primary-button"
+            style={{ fontSize: '0.84rem', padding: '8px 16px' }}
+          >
+            <EditableText dictKey="playbook.admin.btn.newBrand" defaultText="+ Nueva Marca / Canal" />
           </button>
         )}
       </div>

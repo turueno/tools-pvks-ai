@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+data/cloud_store.json
+data/ingest_sessions/
+uploads/

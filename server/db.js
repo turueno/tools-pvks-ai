@@ -210,6 +210,12 @@ export async function getPlaybookDataFromDb(projectId) {
       console.error(`[DB] Error leyendo playbook ${projectId} de Postgres:`, e.message);
     }
   }
+  try {
+    if (fs.existsSync(LOCAL_STORE_FILE)) {
+      const raw = fs.readFileSync(LOCAL_STORE_FILE, 'utf-8');
+      fileCache = JSON.parse(raw);
+    }
+  } catch (e) {}
   return fileCache.playbooks?.[projectId] || null;
 }
 

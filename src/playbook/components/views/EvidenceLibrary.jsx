@@ -4,45 +4,58 @@ import EpistemicBadge from '../EpistemicBadge.jsx';
 import FieldPhoto from '../shared/FieldPhoto.jsx';
 import EditableText from '../shared/EditableText.jsx';
 import InfoTooltip from '../shared/InfoTooltip.jsx';
+import { useSuiteDictionary } from '../../../context/useSuiteDictionary.js';
 import { usePlaybookData } from '../../context/usePlaybookData.js';
 import { HOMES } from '../../data/schema.js';
 
 export default function EvidenceLibrary({ onInspectEntity, onSelectInsight, searchQuery, selectedBrand, selectedEpistemic }) {
-  const { evidences: EVIDENCES, insights: INSIGHTS, isAdmin, saveEntity, openEditor } = usePlaybookData();
+  const { evidences: EVIDENCES = [], insights: INSIGHTS = [], homes: HOMES_CTX = [], isAdmin, saveEntity, openEditor } = usePlaybookData();
+  const { t } = useSuiteDictionary();
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedHome, setSelectedHome] = useState('ALL');
 
+  const allHomes = (Array.isArray(HOMES_CTX) && HOMES_CTX.length > 0) ? HOMES_CTX : (Array.isArray(HOMES) ? HOMES : []);
+  const hasHomes = allHomes.length > 0 && (EVIDENCES || []).some(e => e && e.hogar);
+
   const evidenceTypes = useMemo(() => {
-    return ['ALL', ...new Set(EVIDENCES.map(e => e.tipo))];
+    return ['ALL', ...new Set((EVIDENCES || []).map(e => (e && e.tipo) || 'Evidencia de Campo'))];
   }, [EVIDENCES]);
 
   const filteredEvidences = useMemo(() => {
-    return EVIDENCES.filter(ev => {
+    return (EVIDENCES || []).filter(ev => {
+      if (!ev) return false;
+      const evTitulo = ev.titulo || '';
+      const evCodigo = ev.codigo || '';
+      const evCita = ev.cita || ev.verbatim || '';
+      const evDesc = ev.descripcion || ev.contexto || '';
+      const evMarca = ev.marca || ev.marcaRelacionada || '';
+      const evNivel = ev.nivel || ev.epistemicLevel || 'OBSERVADO';
+      const evTipo = ev.tipo || 'Evidencia de Campo';
+
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchesQ =
-          ev.titulo.toLowerCase().includes(q) ||
-          ev.codigo.toLowerCase().includes(q) ||
-          ev.cita.toLowerCase().includes(q) ||
-          ev.descripcion.toLowerCase().includes(q) ||
-          ev.marca.toLowerCase().includes(q) ||
-          ev.contexto.toLowerCase().includes(q);
+          evTitulo.toLowerCase().includes(q) ||
+          evCodigo.toLowerCase().includes(q) ||
+          evCita.toLowerCase().includes(q) ||
+          evDesc.toLowerCase().includes(q) ||
+          evMarca.toLowerCase().includes(q);
         if (!matchesQ) return false;
       }
 
       if (selectedBrand && selectedBrand !== 'ALL') {
-        if (!ev.marca.toLowerCase().includes(selectedBrand.toLowerCase())) return false;
+        if (!evMarca.toLowerCase().includes(selectedBrand.toLowerCase())) return false;
       }
 
       if (selectedEpistemic && selectedEpistemic !== 'ALL') {
-        if (ev.nivel !== selectedEpistemic) return false;
+        if (evNivel !== selectedEpistemic) return false;
       }
 
-      if (selectedType !== 'ALL' && ev.tipo !== selectedType) {
+      if (selectedType !== 'ALL' && evTipo !== selectedType) {
         return false;
       }
 
-      if (selectedHome !== 'ALL' && ev.hogar !== selectedHome) {
+      if (selectedHome !== 'ALL' && ev.hogar && ev.hogar !== selectedHome) {
         return false;
       }
 
@@ -60,18 +73,20 @@ export default function EvidenceLibrary({ onInspectEntity, onSelectInsight, sear
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0369A1', backgroundColor: '#E0F2FE', padding: '3px 8px', borderRadius: '12px' }}>
                 <EditableText dictKey="playbook.evidence.tag" defaultText="NIVEL OBSERVADO (EMPÍRICO)" />
               </span>
-              <span style={{ color: '#64748B', fontSize: '0.85rem' }}>Trazabilidad directa a páginas del reporte</span>
+              <span style={{ color: '#64748B', fontSize: '0.85rem' }}>
+                <EditableText dictKey="playbook.evidence.subtag" defaultText="Trazabilidad directa a fuentes y registros de campo" />
+              </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
               <h1 style={{ fontSize: '2.2rem', fontWeight: 900, color: '#191919', margin: 0 }}>
                 <EditableText dictKey="playbook.evidence.title" defaultText="Biblioteca de Evidencias Etnográficas" />
               </h1>
               <span style={{ fontSize: '1rem', color: '#64748B', fontWeight: 600 }}>
-                ({filteredEvidences.length} registros)
+                ({filteredEvidences.length} {t('playbook.evidence.recordsCount', 'registros')})
               </span>
               <InfoTooltip
                 title="Capa Empírica Inmutable"
-                content="La evidencia constituye la base empírica del modelo. Registra observaciones en vivo, fotografías de despensas, citas literales y rutinas documentadas durante las inmersiones etnográficas en CDMX."
+                content="La evidencia constituye la base empírica del modelo. Registra observaciones en vivo, fotografías, citas literales y rutinas documentadas durante la investigación de campo."
                 position="right"
                 maxWidth={340}
               />
@@ -92,30 +107,32 @@ export default function EvidenceLibrary({ onInspectEntity, onSelectInsight, sear
                 fontSize: '0.84rem'
               }}
             >
-              <option value="ALL">Todos los tipos de registro</option>
+              <option value="ALL">{t('playbook.evidence.filterTypes', 'Todos los tipos de registro')}</option>
               {evidenceTypes.filter(t => t !== 'ALL').map(t => (
                 <option key={t} value={t}>{t}</option>
               ))}
             </select>
 
-            {/* Filter by Home */}
-            <select
-              value={selectedHome}
-              onChange={(e) => setSelectedHome(e.target.value)}
-              style={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #CBD5E1',
-                borderRadius: '8px',
-                padding: '7px 12px',
-                color: '#191919',
-                fontSize: '0.84rem'
-              }}
-            >
-              <option value="ALL">Todos los hogares estudiados</option>
-              {HOMES.map(h => (
-                <option key={h.id} value={h.id}>{h.name}</option>
-              ))}
-            </select>
+            {/* Filter by Home if applicable */}
+            {hasHomes && (
+              <select
+                value={selectedHome}
+                onChange={(e) => setSelectedHome(e.target.value)}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '8px',
+                  padding: '7px 12px',
+                  color: '#191919',
+                  fontSize: '0.84rem'
+                }}
+              >
+                <option value="ALL">{t('playbook.evidence.filterHomes', 'Todos los hogares / sujetos')}</option>
+                {allHomes.map(h => (
+                  <option key={h.id} value={h.id}>{h.name}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
@@ -123,12 +140,18 @@ export default function EvidenceLibrary({ onInspectEntity, onSelectInsight, sear
       {/* Grid de Evidencias */}
       {filteredEvidences.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem', backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px dashed #CBD5E1' }}>
-          <p style={{ color: '#64748B', fontSize: '1.1rem' }}>No se encontraron evidencias con los filtros seleccionados.</p>
+          <p style={{ color: '#64748B', fontSize: '1.1rem' }}>
+            {t('playbook.evidence.empty', 'No se encontraron evidencias con los filtros seleccionados.')}
+          </p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
           {filteredEvidences.map(ev => {
-            const relatedInsights = INSIGHTS.filter(i => i.evidenciaIds.includes(ev.id));
+            const relatedInsights = (INSIGHTS || []).filter(i => {
+              if (!i) return false;
+              const rel = i.evidenciasRelacionadas || i.evidenciaIds || [];
+              return (Array.isArray(rel) && rel.includes(ev.id)) || (ev.insightId && i.id === ev.insightId);
+            });
 
             return (
               <div
@@ -149,13 +172,13 @@ export default function EvidenceLibrary({ onInspectEntity, onSelectInsight, sear
                   {/* Top Bar de la Card */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <EpistemicBadge level={ev.nivel} size="small" />
+                      <EpistemicBadge level={ev.nivel || ev.epistemicLevel || 'OBSERVADO'} size="small" />
                       <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F6911E' }}>
                         {ev.codigo}
                       </span>
                     </div>
                     <span style={{ fontSize: '0.75rem', color: '#64748B', backgroundColor: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', fontWeight: 500 }}>
-                      {ev.fuente}
+                      {ev.fuente || 'Insumo de Campo'}
                     </span>
                   </div>
 
@@ -164,7 +187,7 @@ export default function EvidenceLibrary({ onInspectEntity, onSelectInsight, sear
                     {ev.titulo}
                   </h3>
                   <div style={{ fontSize: '0.75rem', color: '#775AFF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
-                    📁 {ev.tipo} · {ev.marca}
+                    📁 {ev.tipo || 'Evidencia de Campo'} · {ev.marca || ev.marcaRelacionada || 'Estudio'}
                   </div>
 
                   {/* Foto de Campo Etnográfica si existe */}
@@ -212,12 +235,19 @@ export default function EvidenceLibrary({ onInspectEntity, onSelectInsight, sear
 
                   {/* Metadata de Contexto y Actores */}
                   <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    <span style={{ fontSize: '0.74rem', color: '#475569', backgroundColor: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', fontWeight: 500 }}>
-                      📍 {ev.contexto}
-                    </span>
-                    {ev.actores.map(a => (
+                    {ev.contexto && (
+                      <span style={{ fontSize: '0.74rem', color: '#475569', backgroundColor: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', fontWeight: 500 }}>
+                        📍 {ev.contexto}
+                      </span>
+                    )}
+                    {(Array.isArray(ev.actores) ? ev.actores : (ev.actor ? [ev.actor] : [])).map(a => (
                       <span key={a} style={{ fontSize: '0.74rem', color: '#4338CA', backgroundColor: '#EEF2FF', padding: '3px 8px', borderRadius: '4px', fontWeight: 600 }}>
                         👤 {a}
+                      </span>
+                    ))}
+                    {(ev.tags || []).map(t => (
+                      <span key={t} style={{ fontSize: '0.72rem', color: '#64748B', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', padding: '2px 7px', borderRadius: '4px', fontWeight: 500 }}>
+                        #{t}
                       </span>
                     ))}
                   </div>

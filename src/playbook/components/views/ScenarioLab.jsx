@@ -4,14 +4,27 @@ import EpistemicBadge from '../EpistemicBadge.jsx';
 import { Icon } from '../shared/Icons.jsx';
 import InfoTooltip from '../shared/InfoTooltip.jsx';
 import EditableText from '../../../components/shared/EditableText.jsx';
-import { SCENARIO_DIMENSIONS, DEFAULT_SCENARIO_STATE } from '../../data/scenarioDimensions.js';
-import { SCENARIO_PRESETS } from '../../data/presets.js';
-import { evaluateScenario } from '../../engine/scenarioEngine.js';
+import { usePlaybookData } from '../../context/usePlaybookData.js';
+import { getScenarioConfig } from '../../data/scenarioRegistry.js';
 
 export default function ScenarioLab({ incomingScenario, onClearIncomingScenario, onBuildOpportunity }) {
-  const [scenarioState, setScenarioState] = useState(DEFAULT_SCENARIO_STATE);
+  const { activeProjectId, activeProject, data } = usePlaybookData();
+  const config = useMemo(() => {
+    return getScenarioConfig(activeProjectId, activeProject, data);
+  }, [activeProjectId, activeProject, data]);
+
+  const { dimensions, defaultState, presets, evaluator, tag, title, tooltipTitle, tooltipContent } = config;
+
+  const [scenarioState, setScenarioState] = useState(defaultState);
   const [activePresetId, setActivePresetId] = useState(null);
   const [sourceBanner, setSourceBanner] = useState(null);
+
+  useEffect(() => {
+    setScenarioState(config.defaultState);
+    setActivePresetId(null);
+    setSourceBanner(null);
+  }, [config.defaultState]);
+
   const [savedScenarios, setSavedScenarios] = useState(() => {
     try {
       const stored = localStorage.getItem('pvks_saved_scenarios');
@@ -55,14 +68,14 @@ export default function ScenarioLab({ incomingScenario, onClearIncomingScenario,
 
   const resetDefaults = () => {
     setActivePresetId(null);
-    setScenarioState(DEFAULT_SCENARIO_STATE);
+    setScenarioState(config.defaultState);
     setSourceBanner(null);
     if (onClearIncomingScenario) onClearIncomingScenario();
   };
 
   const results = useMemo(() => {
-    return evaluateScenario(scenarioState);
-  }, [scenarioState]);
+    return evaluator(scenarioState);
+  }, [evaluator, scenarioState]);
 
   const handleSaveScenario = () => {
     if (!saveTitle.trim()) return;
@@ -100,17 +113,17 @@ export default function ScenarioLab({ incomingScenario, onClearIncomingScenario,
       <div style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
           <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', backgroundColor: '#D1FAE5', padding: '3px 8px', borderRadius: '12px' }}>
-            <EditableText dictKey="playbook.scenario.tag" defaultText="SIMULADOR CUALITATIVO DE DEMANDA" />
+            <EditableText dictKey={`playbook.scenario.tag.${activeProjectId}`} defaultText={tag} />
           </span>
           <EpistemicBadge level="HIPOTESIS" size="small" />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <h1 style={{ fontSize: '2.2rem', fontWeight: 900, color: '#191919', margin: 0 }}>
-            <EditableText dictKey="playbook.scenario.title" defaultText="Scenario Lab: Laboratorio de Escenarios" />
+            <EditableText dictKey={`playbook.scenario.title.${activeProjectId}`} defaultText={title} />
           </h1>
           <InfoTooltip
-            title="Simulación Contextual Basada en 4 Dimensiones"
-            content="Modifica las condiciones reales del hogar (Situación Material, Etapa del Bebé, Autoridad Externa y Marco Moral) para observar cómo se reconfigura la tracción de marcas y qué tensiones latentes se activan."
+            title={tooltipTitle}
+            content={tooltipContent}
             position="right"
             maxWidth={380}
           />
@@ -168,7 +181,7 @@ export default function ScenarioLab({ incomingScenario, onClearIncomingScenario,
           Casos Etnográficos Típicos del Reporte:
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-          {SCENARIO_PRESETS.map(p => {
+          {presets.map(p => {
             const isSelected = activePresetId === p.id;
             return (
               <button
@@ -208,7 +221,7 @@ export default function ScenarioLab({ incomingScenario, onClearIncomingScenario,
         
         {/* PANEL DE LAS 4 DIMENSIONES CUALITATIVAS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {SCENARIO_DIMENSIONS.map(dim => (
+          {dimensions.map(dim => (
             <div
               key={dim.id}
               style={{

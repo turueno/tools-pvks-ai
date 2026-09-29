@@ -6,10 +6,33 @@ import EditableText from '../../../components/shared/EditableText.jsx';
 import { usePlaybookData } from '../../context/usePlaybookData.js';
 
 export default function DecisionExplorer({ onInspectEntity }) {
-  const { decisionChains: DECISION_CHAINS, evidences: EVIDENCES, isAdmin, openEditor } = usePlaybookData();
+  const { decisionChains: DECISION_CHAINS = [], evidences: EVIDENCES = [], activeProject, isAdmin, openEditor } = usePlaybookData();
   const [selectedChainId, setSelectedChainId] = useState(DECISION_CHAINS[0]?.id || 'chain-nido');
 
-  const activeChain = DECISION_CHAINS.find(c => c.id === selectedChainId) || DECISION_CHAINS[0] || {};
+  const activeChain = DECISION_CHAINS.find(c => c.id === selectedChainId) || DECISION_CHAINS[0] || null;
+  const isLullaby = activeProject?.id === 'lullaby-cdmx-2026';
+  const pTitle = activeProject?.titulo || 'Playbook';
+
+  const etapas = (activeChain?.etapas || activeChain?.pasos || []).map((step, idx) => {
+    if (typeof step === 'object') {
+      return {
+        paso: step.paso || idx + 1,
+        nombre: step.nombre || (typeof step.paso === 'string' ? step.paso : `Etapa ${idx + 1}`),
+        actorPrincipal: step.actorPrincipal || step.canal || 'Usuario / Consumidor',
+        accion: step.accion || step.descripcion || '',
+        rolActor: step.rolActor || step.canal || 'Decisor',
+        cita: step.cita || '',
+        evidenciaId: step.evidenciaId
+      };
+    }
+    return {
+      paso: idx + 1,
+      nombre: String(step),
+      actorPrincipal: 'Consumidor',
+      accion: String(step),
+      rolActor: 'Decisión'
+    };
+  });
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.5rem' }}>
@@ -17,27 +40,60 @@ export default function DecisionExplorer({ onInspectEntity }) {
       <div style={{ marginBottom: '1.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
           <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#C25E00', backgroundColor: '#FFF7ED', padding: '3px 8px', borderRadius: '12px' }}>
-            <EditableText dictKey="playbook.decisions.tag" defaultText="CADENAS DE CERTEZA" />
+            <EditableText dictKey="playbook.decisions.tag" defaultText={activeProject?.badge || "CADENAS DE DECISIÓN"} />
           </span>
           <span style={{ color: '#64748B', fontSize: '0.85rem' }}>
-            <EditableText dictKey="playbook.decisions.desc" defaultText="Mapeo de pasos y actores decisores" />
+            <EditableText dictKey="playbook.decisions.desc" defaultText="Mapeo de pasos, puntos de contacto y actores decisores" />
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <h1 style={{ fontSize: '2.2rem', fontWeight: 900, color: '#191919', margin: 0 }}>
-            <EditableText dictKey="playbook.decisions.title" defaultText="Decision Explorer (El Viaje de Validación)" />
+            <EditableText
+              dictKey={`playbook.decisions.title.${activeProject?.id || 'default'}`}
+              defaultText={isLullaby ? "Decision Explorer (El Viaje de Validación)" : `Decision Explorer: ${pTitle}`}
+            />
           </h1>
           <InfoTooltip
             title="Secuencia del Viaje de Decisión"
-            content="Ninguna fuente resuelve la decisión por sí sola. En la categoría infantil, la compra atraviesa una secuencia rigurosa: 1. Descubrimiento → 2. Validación Médica (pediatra) → 3. Evaluación de Atributos → 4. Prueba Doméstica → 5. Observación de la respuesta física del Bebé."
+            content="Ninguna fuente resuelve la decisión por sí sola. Mapea la secuencia de pasos, puntos de contacto y validaciones del usuario desde la necesidad inicial hasta el consumo."
             position="right"
             maxWidth={360}
           />
         </div>
       </div>
 
-      {/* Tabs Selector de Cadenas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px', marginBottom: '2.5rem' }}>
+      {/* Si no hay cadenas configuradas */}
+      {DECISION_CHAINS.length === 0 || !activeChain ? (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px dashed #CBD5E1' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🗺️</div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1E293B', marginBottom: '8px' }}>
+            No hay cadenas de decisión configuradas para este Playbook
+          </h3>
+          <p style={{ color: '#64748B', maxWidth: '520px', margin: '0 auto 1.5rem auto', fontSize: '0.9rem', lineHeight: 1.5 }}>
+            Las cadenas de decisión mapean la secuencia de pasos, fricciones y validaciones del usuario desde la detonación de la necesidad hasta la experiencia post-uso.
+          </p>
+          {isAdmin && (
+            <button
+              onClick={() => openEditor('decision', {})}
+              style={{
+                backgroundColor: '#16A34A',
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              + Agregar Primera Cadena
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Tabs Selector de Cadenas */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px', marginBottom: '2.5rem' }}>
         {DECISION_CHAINS.map(c => {
           const isSelected = selectedChainId === c.id;
           return (
@@ -55,7 +111,7 @@ export default function DecisionExplorer({ onInspectEntity }) {
               className="card-hover-fx"
             >
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: isSelected ? '#C25E00' : '#64748B', textTransform: 'uppercase', marginBottom: '4px' }}>
-                🏷️ Marca: {c.marca} · {c.fuente}
+                🏷️ {c.marca ? `Marca: ${c.marca} · ` : ''}{c.fuente || 'Estudio'}
               </div>
               <div style={{ fontWeight: 800, color: '#191919', fontSize: '1rem' }}>
                 {c.titulo}
@@ -78,7 +134,7 @@ export default function DecisionExplorer({ onInspectEntity }) {
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#191919', margin: '0 0 6px 0' }}>
-              {activeChain.titulo}
+              {activeChain.titulo || 'Cadena de Decisión'}
             </h2>
             {isAdmin && (
               <button
@@ -100,20 +156,20 @@ export default function DecisionExplorer({ onInspectEntity }) {
             )}
           </div>
           <p style={{ color: '#64748B', fontSize: '0.92rem', margin: 0 }}>
-            {activeChain.descripcion} ({activeChain.fuente})
+            {activeChain.descripcion || 'Secuencia estructurada de interacción y decisión.'} {activeChain.fuente ? `(${activeChain.fuente})` : ''}
           </p>
         </div>
 
         {/* Step-by-Step Flow */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
-          {activeChain.etapas.map((etapa, idx) => {
+          {etapas.map((etapa, idx) => {
             const ev = EVIDENCES.find(e => e.id === etapa.evidenciaId);
             const stepColors = ['#0284c7', '#775AFF', '#F6911E', '#F23F3B', '#00B487'];
             const stepColor = stepColors[idx % stepColors.length];
 
             return (
               <div
-                key={etapa.paso}
+                key={etapa.paso || idx}
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '70px 1fr',
@@ -140,9 +196,9 @@ export default function DecisionExplorer({ onInspectEntity }) {
                       zIndex: 2
                     }}
                   >
-                    0{etapa.paso}
+                    0{idx + 1}
                   </div>
-                  {idx < activeChain.etapas.length - 1 && (
+                  {idx < etapas.length - 1 && (
                     <div
                       style={{
                         width: '2px',
@@ -161,7 +217,7 @@ export default function DecisionExplorer({ onInspectEntity }) {
                     border: '1px solid #E2E8F0',
                     borderRadius: '12px',
                     padding: '1.5rem',
-                    marginBottom: idx < activeChain.etapas.length - 1 ? '0.5rem' : 0
+                    marginBottom: idx < etapas.length - 1 ? '0.5rem' : 0
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
@@ -245,6 +301,8 @@ export default function DecisionExplorer({ onInspectEntity }) {
           })}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

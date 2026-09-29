@@ -4,12 +4,14 @@ import { checkCompliance, checkUniversalCriteria } from './logic/compliance';
 import { scorePAC, balancePAC, generateRecommendations } from './logic/pacEngine';
 import SalsaNegraDiagnostic from './components/SalsaNegraDiagnostic';
 import PlaybookApp from './playbook/PlaybookApp';
+import SNTDPlaybookApp from './playbook/sntd/SNTDPlaybookApp.jsx';
 import { DOCUMENTO_RECTOR_TEXT } from './data/rectorData';
 import MetaAdminCMSModal from './components/admin/MetaAdminCMSModal.jsx';
 import MetaAdminAuthModal from './components/admin/MetaAdminAuthModal.jsx';
 import MetaAdminPill from './components/admin/MetaAdminPill.jsx';
 import EditableText from './components/shared/EditableText.jsx';
 import NewSuitePlaybookModal from './components/admin/NewSuitePlaybookModal.jsx';
+import PlaybookIngestWizard from './components/admin/PlaybookIngestWizard.jsx';
 import MetaSuiteHQView from './components/admin/MetaSuiteHQView.jsx';
 import RestrictedAccessScreen from './components/shared/RestrictedAccessScreen.jsx';
 import { useAccessGuard } from './context/AccessGuardContext.jsx';
@@ -186,9 +188,11 @@ function App() {
         <MetaSuiteHQView onBackToPortal={() => setView('portal')} />
       )}
 
-      {/* VISTA 1: INSIGHT PLAYBOOK ETNOGRÁFICO */}
+      {/* VISTA 1: INSIGHT PLAYBOOK ETNOGRÁFICO / UNIFICADO */}
       {view === 'playbook' && (
         <PlaybookApp
+          activePlaybookId={activePlaybookId}
+          activePlaybook={activePlaybook}
           onBackToPortal={guard.isRestricted ? null : () => setView('portal')}
         />
       )}
@@ -420,28 +424,11 @@ function App() {
         </div>
       )}
 
-      {/* VISTA 3: S.N.T.D. DIAGNOSTIC */}
+      {/* VISTA 3: S.N.T.D. PLAYBOOK TERRITORIAL */}
       {view === 'sntd' && (
-        <div className="app-container theme-sntd" style={{ position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            {!guard.isRestricted ? (
-              <button className="back-button" onClick={() => setView('portal')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                ← Suite Provokers AI Tools
-              </button>
-            ) : (
-              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#C25E00' }}>
-                🛡️ MODO CONSULTA CLIENTE ({guard.watermarkText || 'CONFIDENCIAL'})
-              </span>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 700 }}>
-                Playbook: <strong style={{ color: '#191919' }}>S.N.T.D. Diagnostic</strong>
-              </span>
-              {!guard.isRestricted && <MetaAdminPill compact={true} />}
-            </div>
-          </div>
-          <SalsaNegraDiagnostic documentoRector={DOCUMENTO_RECTOR_TEXT} />
-        </div>
+        <SNTDPlaybookApp
+          onBackToPortal={guard.isRestricted ? null : () => setView('portal')}
+        />
       )}
 
       {/* VISTA 4: P.A.C. MODEL GENERATOR */}

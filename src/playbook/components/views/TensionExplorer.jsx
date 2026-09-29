@@ -6,20 +6,23 @@ import EditableText from '../../../components/shared/EditableText.jsx';
 import { usePlaybookData } from '../../context/usePlaybookData.js';
 
 export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
-  const { tensions: TENSIONS, evidences: EVIDENCES, isAdmin, openEditor } = usePlaybookData();
+  const { tensions: TENSIONS = [], evidences: EVIDENCES = [], isAdmin, openEditor } = usePlaybookData();
   const [selectedTensionId, setSelectedTensionId] = useState(TENSIONS[0]?.id || 'ten-01');
 
   const activeTension = TENSIONS.find(t => t.id === selectedTensionId) || TENSIONS[0] || {};
+  const activeTitle = activeTension.titulo || activeTension.formulacion || 'Tensión Dialéctica';
+  const poloA = activeTension.poloA || { nombre: 'Polo A', descripcion: '' };
+  const poloB = activeTension.poloB || { nombre: 'Polo B', descripcion: '' };
 
-  const poloAEvs = (activeTension.poloA.evidencias || [])
+  const poloAEvs = (poloA.evidencias || [])
     .map(id => EVIDENCES.find(e => e.id === id))
     .filter(Boolean);
-  const poloAPhotoEv = poloAEvs.find(e => e.imagenUrl);
+  const poloAPhotoEv = poloAEvs.find(e => e?.imagenUrl);
 
-  const poloBEvs = (activeTension.poloB.evidencias || [])
+  const poloBEvs = (poloB.evidencias || [])
     .map(id => EVIDENCES.find(e => e.id === id))
     .filter(Boolean);
-  const poloBPhotoEv = poloBEvs.find(e => e.imagenUrl);
+  const poloBPhotoEv = poloBEvs.find(e => e?.imagenUrl);
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.5rem' }}>
@@ -39,7 +42,7 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
           </h1>
           <InfoTooltip
             title="Dilemas Dialécticos en Conflicto"
-            content="Las tensiones revelan los choques entre las aspiraciones morales de la madre y los límites físicos o económicos de su vida cotidiana. Explora los dos polos en conflicto (Polo A vs Polo B) y las oportunidades derivadas."
+            content="Las tensiones revelan los choques entre las aspiraciones, hábitos o demandas del usuario y las fricciones o límites de su realidad cotidiana. Explora los dos polos en conflicto (Polo A vs Polo B) y las oportunidades derivadas."
             position="right"
             maxWidth={360}
           />
@@ -50,6 +53,7 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px', marginBottom: '2rem' }}>
         {TENSIONS.map(t => {
           const isSelected = selectedTensionId === t.id;
+          const tLabel = t.titulo || t.formulacion || t.id;
           return (
             <div
               key={t.id}
@@ -65,10 +69,10 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
               className="card-hover-fx"
             >
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: isSelected ? '#DC2626' : '#64748B', textTransform: 'uppercase', marginBottom: '4px' }}>
-                ⚡ Tensión {t.id.replace('ten-', '')}
+                ⚡ Tensión {t.codigo || t.id.replace('ten-', '')}
               </div>
-              <div style={{ fontWeight: 800, color: '#191919', fontSize: '0.95rem' }}>
-                {t.titulo}
+              <div style={{ fontWeight: 800, color: '#191919', fontSize: '0.95rem', lineHeight: 1.3 }}>
+                {tLabel}
               </div>
             </div>
           );
@@ -91,11 +95,11 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
         {/* Tension Title & Description */}
         <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
           <span style={{ fontSize: '0.8rem', color: '#DC2626', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Eje de Fricción Psicosocial
+            Eje de Fricción Dialéctico
           </span>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '6px' }}>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#191919', margin: 0 }}>
-              {activeTension.titulo}
+              {activeTitle}
             </h2>
             {isAdmin && (
               <button
@@ -117,7 +121,7 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
             )}
           </div>
           <p style={{ color: '#475569', fontSize: '0.96rem', lineHeight: 1.6, margin: '10px 0 0 0' }}>
-            {activeTension.descripcion}
+            {activeTension.descripcion || activeTension.aprendizaje || ''}
           </p>
         </div>
 
@@ -143,9 +147,15 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
                 </span>
               </div>
 
-              <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0C4A6E', margin: '0 0 1rem 0' }}>
-                {activeTension.poloA.nombre}
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0C4A6E', margin: '0 0 0.75rem 0' }}>
+                {poloA.nombre || 'Polo A'}
               </h3>
+
+              {poloA.descripcion && (
+                <p style={{ color: '#0369A1', fontSize: '0.88rem', lineHeight: 1.5, margin: '0 0 1rem 0' }}>
+                  {poloA.descripcion}
+                </p>
+              )}
 
               {poloAPhotoEv && (
                 <div style={{ marginBottom: '1.25rem' }}>
@@ -165,83 +175,89 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
                 </div>
               )}
 
-              <div style={{ marginBottom: '1.25rem' }}>
-                <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Conceptos y Comportamientos Nucleares:
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {activeTension.poloA.conceptos.map(c => (
-                    <span
-                      key={c}
-                      style={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #BAE6FD',
-                        color: '#0369A1',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '0.82rem',
-                        fontWeight: 600
-                      }}
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.25rem' }}>
-                <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Marcas / Soluciones en este Polo:
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {activeTension.poloA.marcas.map(m => (
-                    <span
-                      key={m}
-                      style={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #E2E8F0',
-                        color: '#191919',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '0.82rem',
-                        fontWeight: 600
-                      }}
-                    >
-                      🏷️ {m}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Evidencias Asociadas:
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {activeTension.poloA.evidencias.map(evId => {
-                    const ev = EVIDENCES.find(e => e.id === evId);
-                    if (!ev) return null;
-                    return (
-                      <div
-                        key={ev.id}
-                        onClick={() => onInspectEntity(ev)}
-                        className="pvks-verbatim"
+              {poloA.conceptos && poloA.conceptos.length > 0 && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Conceptos y Comportamientos Nucleares:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {poloA.conceptos.map(c => (
+                      <span
+                        key={c}
                         style={{
                           backgroundColor: '#FFFFFF',
-                          borderLeft: '3px solid #0284c7',
-                          padding: '7px 10px',
-                          borderRadius: '0 6px 6px 0',
-                          fontSize: '0.84rem',
+                          border: '1px solid #BAE6FD',
                           color: '#0369A1',
-                          cursor: 'pointer'
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.82rem',
+                          fontWeight: 600
                         }}
                       >
-                        [{ev.codigo}] “{ev.cita.length > 50 ? ev.cita.substring(0, 48) + '...' : ev.cita}”
-                      </div>
-                    );
-                  })}
+                        {c}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {poloA.marcas && poloA.marcas.length > 0 && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Marcas / Soluciones en este Polo:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {poloA.marcas.map(m => (
+                      <span
+                        key={m}
+                        style={{
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          color: '#191919',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.82rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        🏷️ {m}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {poloA.evidencias && poloA.evidencias.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Evidencias Asociadas:
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {poloA.evidencias.map(evId => {
+                      const ev = EVIDENCES.find(e => e.id === evId);
+                      if (!ev) return null;
+                      return (
+                        <div
+                          key={ev.id}
+                          onClick={() => onInspectEntity && onInspectEntity(ev)}
+                          className="pvks-verbatim"
+                          style={{
+                            backgroundColor: '#FFFFFF',
+                            borderLeft: '3px solid #0284c7',
+                            padding: '7px 10px',
+                            borderRadius: '0 6px 6px 0',
+                            fontSize: '0.84rem',
+                            color: '#0369A1',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          [{ev.codigo}] “{ev.cita ? (ev.cita.length > 50 ? ev.cita.substring(0, 48) + '...' : ev.cita) : ev.titulo}”
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -265,9 +281,15 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
                 </span>
               </div>
 
-              <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#78350F', margin: '0 0 1rem 0' }}>
-                {activeTension.poloB.nombre}
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#78350F', margin: '0 0 0.75rem 0' }}>
+                {poloB.nombre || 'Polo B'}
               </h3>
+
+              {poloB.descripcion && (
+                <p style={{ color: '#92400E', fontSize: '0.88rem', lineHeight: 1.5, margin: '0 0 1rem 0' }}>
+                  {poloB.descripcion}
+                </p>
+              )}
 
               {poloBPhotoEv && (
                 <div style={{ marginBottom: '1.25rem' }}>
@@ -287,83 +309,89 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
                 </div>
               )}
 
-              <div style={{ marginBottom: '1.25rem' }}>
-                <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Conceptos y Comportamientos Nucleares:
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {activeTension.poloB.conceptos.map(c => (
-                    <span
-                      key={c}
-                      style={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #FDE68A',
-                        color: '#92400E',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '0.82rem',
-                        fontWeight: 600
-                      }}
-                    >
-                      {c}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.25rem' }}>
-                <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Marcas / Soluciones en este Polo:
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {activeTension.poloB.marcas.map(m => (
-                    <span
-                      key={m}
-                      style={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1px solid #E2E8F0',
-                        color: '#191919',
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '0.82rem',
-                        fontWeight: 600
-                      }}
-                    >
-                      🏷️ {m}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
-                  Evidencias Asociadas:
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {activeTension.poloB.evidencias.map(evId => {
-                    const ev = EVIDENCES.find(e => e.id === evId);
-                    if (!ev) return null;
-                    return (
-                      <div
-                        key={ev.id}
-                        onClick={() => onInspectEntity(ev)}
-                        className="pvks-verbatim"
+              {poloB.conceptos && poloB.conceptos.length > 0 && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Conceptos y Comportamientos Nucleares:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {poloB.conceptos.map(c => (
+                      <span
+                        key={c}
                         style={{
                           backgroundColor: '#FFFFFF',
-                          borderLeft: '3px solid #F6911E',
-                          padding: '7px 10px',
-                          borderRadius: '0 6px 6px 0',
-                          fontSize: '0.84rem',
-                          color: '#B45309',
-                          cursor: 'pointer'
+                          border: '1px solid #FDE68A',
+                          color: '#92400E',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.82rem',
+                          fontWeight: 600
                         }}
                       >
-                        [{ev.codigo}] “{ev.cita.length > 50 ? ev.cita.substring(0, 48) + '...' : ev.cita}”
-                      </div>
-                    );
-                  })}
+                        {c}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {poloB.marcas && poloB.marcas.length > 0 && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Marcas / Soluciones en este Polo:
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {poloB.marcas.map(m => (
+                      <span
+                        key={m}
+                        style={{
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          color: '#191919',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.82rem',
+                          fontWeight: 600
+                        }}
+                      >
+                        🏷️ {m}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {poloB.evidencias && poloB.evidencias.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>
+                    Evidencias Asociadas:
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {poloB.evidencias.map(evId => {
+                      const ev = EVIDENCES.find(e => e.id === evId);
+                      if (!ev) return null;
+                      return (
+                        <div
+                          key={ev.id}
+                          onClick={() => onInspectEntity && onInspectEntity(ev)}
+                          className="pvks-verbatim"
+                          style={{
+                            backgroundColor: '#FFFFFF',
+                            borderLeft: '3px solid #F6911E',
+                            padding: '7px 10px',
+                            borderRadius: '0 6px 6px 0',
+                            fontSize: '0.84rem',
+                            color: '#B45309',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          [{ev.codigo}] “{ev.cita ? (ev.cita.length > 50 ? ev.cita.substring(0, 48) + '...' : ev.cita) : ev.titulo}”
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -375,7 +403,7 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
               ⚙️ Mecanismo de Conciliación
             </div>
             <p style={{ color: '#7C2D12', fontSize: '0.9rem', lineHeight: 1.5, margin: 0 }}>
-              {activeTension.mecanismoResolucion}
+              {activeTension.mecanismoResolucion || activeTension.aprendizaje || activeTension.descripcion || 'Mecanismo de resolución para conciliar ambos polos de tensión.'}
             </p>
           </div>
 
@@ -385,7 +413,7 @@ export default function TensionExplorer({ onInspectEntity, onSimulateEntity }) {
                 ✨ Territorio de Oportunidad para la Marca
               </div>
               <p style={{ color: '#064E3B', fontSize: '0.9rem', lineHeight: 1.5, margin: '0 0 12px 0' }}>
-                {activeTension.oportunidadVinculada}
+                {activeTension.oportunidadVinculada || activeTension.aprendizaje || 'Territorio de innovación y activación derivado de esta tensión.'}
               </p>
             </div>
             {onSimulateEntity && (

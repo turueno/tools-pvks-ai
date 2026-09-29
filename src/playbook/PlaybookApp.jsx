@@ -18,21 +18,25 @@ import EditModal from './components/admin/EditModal.jsx';
 import ExportShareModal from './components/shared/ExportShareModal.jsx';
 import MetaAdminAuthModal from '../components/admin/MetaAdminAuthModal.jsx';
 import MetaAdminCMSModal from '../components/admin/MetaAdminCMSModal.jsx';
+import PACView from './components/views/PACView.jsx';
+import SNTDGatewaysView from './components/views/SNTDGatewaysView.jsx';
+import SNTDToolkitView from './components/views/SNTDToolkitView.jsx';
+import { ViewErrorBoundary } from './components/shared/ViewErrorBoundary.jsx';
 import { PlaybookDataProvider } from './context/PlaybookDataContext.jsx';
 import { mapEntityToScenario } from './engine/scenarioBridge.js';
 import { mapEntityToAIOperation } from './engine/aiBridge.js';
 import { usePlaybookData } from './context/usePlaybookData.js';
 import { useAccessGuard } from '../context/AccessGuardContext.jsx';
 
-export default function PlaybookApp({ onBackToPortal }) {
+export default function PlaybookApp({ activePlaybookId, activePlaybook, onBackToPortal }) {
   return (
-    <PlaybookDataProvider>
-      <PlaybookAppInner onBackToPortal={onBackToPortal} />
+    <PlaybookDataProvider activePlaybookId={activePlaybookId}>
+      <PlaybookAppInner activePlaybook={activePlaybook} onBackToPortal={onBackToPortal} />
     </PlaybookDataProvider>
   );
 }
 
-function PlaybookAppInner({ onBackToPortal }) {
+function PlaybookAppInner({ activePlaybook, onBackToPortal }) {
   const [currentView, setCurrentView] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('ALL');
@@ -166,10 +170,12 @@ function PlaybookAppInner({ onBackToPortal }) {
         onSelectEpistemic={setSelectedEpistemic}
         onBackToPortal={onBackToPortal}
         onOpenExportShare={() => setIsExportShareOpen(true)}
+        activePlaybook={activePlaybook}
       />
 
       {/* Main View Router */}
       <main style={{ minHeight: 'calc(100vh - 120px)', paddingBottom: '3rem' }}>
+        <ViewErrorBoundary viewName={currentView} onNavigate={handleNavigate}>
         {currentView === 'overview' && (
           <OverviewView
             onNavigate={handleNavigate}
@@ -258,9 +264,22 @@ function PlaybookAppInner({ onBackToPortal }) {
           />
         )}
 
+        {(currentView === 'pac_generator' || currentView === 'pac_ahp' || currentView === 'pac_compliance') && (
+          <PACView activeSubmodule={currentView} />
+        )}
+
+        {currentView === 'sntd_gateways' && (
+          <SNTDGatewaysView />
+        )}
+
+        {currentView === 'sntd_toolkit' && (
+          <SNTDToolkitView />
+        )}
+
         {currentView === 'admin' && (
           <AdminView />
         )}
+        </ViewErrorBoundary>
       </main>
 
       {/* Sliding Side Panel Inspector */}

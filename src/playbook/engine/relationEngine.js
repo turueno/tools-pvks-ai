@@ -1,5 +1,5 @@
 // src/playbook/engine/relationEngine.js
-// Motor de grafos y relaciones sistémicas entre entidades del estudio etnográfico
+// Motor de grafos y relaciones sistémicas dinámicas entre entidades del Playbook
 
 import {
   INSIGHTS as DEFAULT_INSIGHTS,
@@ -12,71 +12,100 @@ import {
 } from '../data/playbookDataset.js';
 
 export function buildSystemGraph(customData = {}) {
-  const ACTORS = customData.actors || DEFAULT_ACTORS;
-  const TENSIONS = customData.tensions || DEFAULT_TENSIONS;
-  const BRAND_MATRIX = customData.brandMatrix || DEFAULT_BRAND_MATRIX;
-  const CONTEXTS = customData.contexts || DEFAULT_CONTEXTS;
-  const OPPORTUNITIES = customData.opportunities || DEFAULT_OPPORTUNITIES;
+  const isLullaby = !customData?.id || customData?.id === 'lullaby-cdmx-2026';
+
+  const ACTORS = (customData.actors && customData.actors.length > 0)
+    ? customData.actors
+    : (isLullaby ? DEFAULT_ACTORS : [
+        { id: 'actor-1', nombre: 'Usuario Clave', rol: 'Decisor y sujeto de estudio' },
+        { id: 'actor-2', nombre: 'Punto de Contacto / Servicio', rol: 'Facilitador del canal' }
+      ]);
+
+  const TENSIONS = (customData.tensions && customData.tensions.length > 0)
+    ? customData.tensions
+    : (isLullaby ? DEFAULT_TENSIONS : []);
+
+  const BRAND_MATRIX = (customData.brandMatrix && customData.brandMatrix.length > 0)
+    ? customData.brandMatrix
+    : (isLullaby ? DEFAULT_BRAND_MATRIX : (
+        customData.primaryBrand
+          ? [{ marca: customData.primaryBrand, rol: 'Marca Principal', color: '#F6911E' }]
+          : [{ marca: 'Marca / Solución', rol: 'Solución Central', color: '#F6911E' }]
+      ));
+
+  const CONTEXTS = (customData.contexts && customData.contexts.length > 0)
+    ? customData.contexts
+    : (isLullaby ? DEFAULT_CONTEXTS : [
+        { id: 'ctx-1', nombre: 'Contexto Habitual', descripcion: 'Entorno cotidiano de interacción' }
+      ]);
+
+  const OPPORTUNITIES = (customData.opportunities && customData.opportunities.length > 0)
+    ? customData.opportunities
+    : (isLullaby ? DEFAULT_OPPORTUNITIES : []);
 
   const nodes = [];
   const edges = [];
 
-  // 1. Nodos de Actores
+  // 1. Nodos de Actores (Columna 0)
   ACTORS.forEach(act => {
+    const actName = act.nombre || act.name || 'Actor';
     nodes.push({
       id: act.id,
-      label: act.nombre.split(' (')[0],
-      sublabel: act.nombre.includes('(') ? act.nombre.split('(')[1].replace(')', '') : 'Actor',
-      fullTitle: act.nombre,
+      label: actName.split(' (')[0].slice(0, 25),
+      sublabel: act.rol ? act.rol.slice(0, 26) : (actName.includes('(') ? actName.split('(')[1].replace(')', '') : 'Actor Clave'),
+      fullTitle: actName,
       type: 'actor',
       column: 0,
       icon: 'actor',
-      color: '#7C3AED', // Violeta Provokers
+      color: '#7C3AED',
       size: 28,
       data: act
     });
   });
 
-  // 2. Nodos de Contextos de Uso
+  // 2. Nodos de Contextos de Uso (Columna 1)
   CONTEXTS.forEach(ctx => {
+    const ctxName = ctx.nombre || ctx.name || 'Contexto';
     nodes.push({
       id: ctx.id,
-      label: ctx.nombre,
-      sublabel: 'Contexto de Hábitat',
-      fullTitle: ctx.nombre,
+      label: ctxName.slice(0, 24),
+      sublabel: ctx.descripcion ? ctx.descripcion.slice(0, 26) : 'Momento de Estudio',
+      fullTitle: ctxName,
       type: 'contexto',
       column: 1,
       icon: 'contexto',
-      color: '#0284C7', // Sky Blue
+      color: '#0284C7',
       size: 26,
       data: ctx
     });
   });
 
-  // 3. Nodos de Tensiones
+  // 3. Nodos de Tensiones (Columna 2)
   TENSIONS.forEach(ten => {
-    const parts = ten.titulo.split(' vs. ');
+    const rawTitle = ten.titulo || ten.formulacion || 'Tensión';
+    const parts = rawTitle.includes(' vs. ') ? rawTitle.split(' vs. ') : (rawTitle.includes(' vs ') ? rawTitle.split(' vs ') : [rawTitle, '']);
     nodes.push({
       id: ten.id,
-      label: parts[0],
-      sublabel: parts[1] ? `vs. ${parts[1]}` : 'Tensión',
-      fullTitle: ten.titulo,
+      label: (parts[0] || 'Tensión').slice(0, 25),
+      sublabel: parts[1] ? `vs. ${parts[1].slice(0, 20)}` : 'Dilema Dialéctico',
+      fullTitle: rawTitle,
       type: 'tension',
       column: 2,
       icon: 'tension',
-      color: '#DC2626', // Crimson Red
+      color: '#DC2626',
       size: 28,
       data: ten
     });
   });
 
-  // 4. Nodos de Marcas y Soluciones
+  // 4. Nodos de Marcas y Soluciones (Columna 3)
   BRAND_MATRIX.forEach(b => {
+    const bMarca = b.marca || b.nombre || 'Marca';
     nodes.push({
-      id: `brand-${b.marca.toLowerCase()}`,
-      label: b.marca,
-      sublabel: b.territorio || 'Marca / Categoría',
-      fullTitle: `Marca: ${b.marca}`,
+      id: `brand-${String(bMarca).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      label: bMarca.slice(0, 24),
+      sublabel: b.territorio || b.rol || 'Marca / Solución',
+      fullTitle: `Marca: ${bMarca}`,
       type: 'solucion',
       column: 3,
       icon: 'solucion',
@@ -86,88 +115,68 @@ export function buildSystemGraph(customData = {}) {
     });
   });
 
-  // Soluciones adicionales
-  nodes.push({
-    id: 'brand-leche-entera',
-    label: 'Leche Entera',
-    sublabel: 'Sustituto Familiar ($25)',
-    fullTitle: 'Leche Entera de Vaca (Hogar)',
-    type: 'solucion',
-    column: 3,
-    icon: 'solucion',
-    color: '#64748B',
-    size: 26,
-    data: { marca: 'Leche Entera', tipo: 'Alternativa cotidiana' }
-  });
-
-  nodes.push({
-    id: 'brand-avena-natural',
-    label: 'Avena Natural',
-    sublabel: 'Estándar Casero',
-    fullTitle: 'Avena Natural en Hojuela',
-    type: 'solucion',
-    column: 3,
-    icon: 'solucion',
-    color: '#059669',
-    size: 26,
-    data: { marca: 'Avena Natural', tipo: 'Estándar artesanal' }
-  });
-
-  // 5. Nodos de Oportunidades Clave
+  // 5. Nodos de Oportunidades Clave (Columna 4)
   OPPORTUNITIES.forEach(opp => {
+    const oppTitulo = opp.titulo || opp.nombre || 'Oportunidad';
     nodes.push({
       id: opp.id,
-      label: opp.titulo.length > 26 ? opp.titulo.substring(0, 24) + '...' : opp.titulo,
-      sublabel: 'Oportunidad de Innovación',
-      fullTitle: opp.titulo,
+      label: oppTitulo.length > 26 ? oppTitulo.substring(0, 24) + '...' : oppTitulo,
+      sublabel: opp.impacto ? `Impacto: ${opp.impacto}` : 'Oportunidad de Innovación',
+      fullTitle: oppTitulo,
       type: 'oportunidad',
       column: 4,
       icon: 'oportunidad',
-      color: '#00B487', // Verde Provokers
+      color: '#00B487',
       size: 26,
       data: opp
     });
   });
 
-  // --- ARISTAS (RELACIONES) ---
-  // Relaciones Mamá -> Actores
-  edges.push({ source: 'act-redes', target: 'act-mama', relation: 'Descubrimiento de temas', label: 'Informa duda' });
-  edges.push({ source: 'act-mama', target: 'act-pediatra', relation: 'Validación médica', label: 'Pregunta y contrasta' });
-  edges.push({ source: 'act-bebe', target: 'act-mama', relation: 'Árbitro de tolerancia', label: 'Acepta o rechaza' });
-  edges.push({ source: 'act-abuelos', target: 'act-mama', relation: 'Flexibilización dominical', label: 'Modifica menú' });
+  // --- ARISTAS DINÁMICAS (RELACIONES) ---
+  // Si existen nodos en columnas adyacentes, conectarlos de forma segura
+  const actorNodes = nodes.filter(n => n.type === 'actor');
+  const contextNodes = nodes.filter(n => n.type === 'contexto');
+  const tensionNodes = nodes.filter(n => n.type === 'tension');
+  const brandNodes = nodes.filter(n => n.type === 'solucion');
+  const oppNodes = nodes.filter(n => n.type === 'oportunidad');
 
-  // Relaciones Actores -> Tensiones
-  edges.push({ source: 'act-mama', target: 'ten-01', relation: 'Vive tensión', label: 'Exige control vs. calle' });
-  edges.push({ source: 'act-bebe', target: 'ten-02', relation: 'Detona integración', label: 'Reclama comer familiar' });
-  edges.push({ source: 'act-pediatra', target: 'ten-04', relation: 'Autoriza alternativa', label: 'Permite leche entera' });
-  edges.push({ source: 'act-mama', target: 'ten-03', relation: 'Negocia culpa', label: 'Busca descanso y alivio' });
+  // Actores -> Contextos
+  if (actorNodes.length > 0 && contextNodes.length > 0) {
+    actorNodes.forEach((act, idx) => {
+      const ctx = contextNodes[idx % contextNodes.length];
+      edges.push({ source: act.id, target: ctx.id, relation: 'Interactúa en', label: 'Presencia' });
+    });
+  }
 
-  // Relaciones Tensiones -> Marcas
-  edges.push({ source: 'ten-01', target: 'brand-gerber', relation: 'Resuelve con portabilidad', label: 'Kit de contingencia' });
-  edges.push({ source: 'ten-02', target: 'brand-nido', relation: 'Cuestiona rol lácteo', label: 'Paso especializado' });
-  edges.push({ source: 'ten-02', target: 'brand-leche-entera', relation: 'Sustituto cotidiano', label: 'Bypass al año' });
-  edges.push({ source: 'ten-03', target: 'brand-nestum', relation: 'Sustituye avena en 1 min', label: 'Alivio sin culpa' });
-  edges.push({ source: 'ten-03', target: 'brand-avena-natural', relation: 'Estándar moral exigente', label: 'Ideal casero' });
+  // Contextos -> Tensiones
+  if (contextNodes.length > 0 && tensionNodes.length > 0) {
+    contextNodes.forEach((ctx, idx) => {
+      const ten = tensionNodes[idx % tensionNodes.length];
+      edges.push({ source: ctx.id, target: ten.id, relation: 'Detona fricción', label: 'Escenario de tensión' });
+    });
+  }
 
-  // Relaciones Contextos -> Tensiones y Soluciones
-  edges.push({ source: 'ctx-ferias', target: 'ten-01', relation: 'Escenario de fricción', label: 'Sin higiene ni estufa' });
-  edges.push({ source: 'ctx-mesa-familiar', target: 'ten-02', relation: 'Detonante de imitación', label: 'El bebé quiere comer igual' });
-  edges.push({ source: 'ctx-cocina', target: 'ten-03', relation: 'Gestión del tiempo', label: 'Carrera matutina' });
-  edges.push({ source: 'ctx-ferias', target: 'brand-gerber', relation: 'Escenario crítico', label: 'Consumo en puesto' });
-  edges.push({ source: 'ctx-cocina', target: 'brand-nestum', relation: 'Optimización de tiempo', label: 'Desayuno exprés' });
-  edges.push({ source: 'ctx-mesa-familiar', target: 'brand-leche-entera', relation: 'Integración cultural', label: 'Comida compartida' });
+  // Tensiones -> Marcas / Soluciones
+  if (tensionNodes.length > 0 && brandNodes.length > 0) {
+    tensionNodes.forEach((ten, idx) => {
+      const br = brandNodes[idx % brandNodes.length];
+      edges.push({ source: ten.id, target: br.id, relation: 'Se atiende con', label: 'Respuesta' });
+    });
+  }
 
-  // Relaciones Marcas -> Oportunidades
-  edges.push({ source: 'brand-gerber', target: 'opp-01', relation: 'Extensión a insumos', label: 'Insumos base cocina' });
-  edges.push({ source: 'brand-gerber', target: 'opp-03', relation: 'Evolución de empaque', label: 'Kit modular pouch' });
-  edges.push({ source: 'brand-nido', target: 'opp-02', relation: 'Defensa de valor', label: 'Seguro de micronutrientes' });
-  edges.push({ source: 'brand-nestum', target: 'opp-04', relation: 'Ampliación culinaria', label: 'Mezcla en recetas de casa' });
+  // Marcas -> Oportunidades
+  if (brandNodes.length > 0 && oppNodes.length > 0) {
+    brandNodes.forEach((br, idx) => {
+      const opp = oppNodes[idx % oppNodes.length];
+      edges.push({ source: br.id, target: opp.id, relation: 'Vía de innovación', label: 'Territorio estratégico' });
+    });
+  }
 
   return { nodes, edges };
 }
 
-export function getEntityConnections(entityId) {
-  const { nodes, edges } = buildSystemGraph();
+export function getEntityConnections(entityId, customData) {
+  const { nodes, edges } = buildSystemGraph(customData);
   const directEdges = edges.filter(e => e.source === entityId || e.target === entityId);
   const connectedNodeIds = new Set();
 

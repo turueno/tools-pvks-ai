@@ -22,6 +22,7 @@ import {
 } from '../data/projectsRegistry.js';
 import { PlaybookDataContext } from './usePlaybookData.js';
 import { fetchCloudPlaybookData, saveCloudPlaybookData } from '../../logic/sync/pvksSyncClient.js';
+import { getSuitePlaybooks } from '../../data/suitePlaybooksRegistry.js';
 
 const LEGACY_STORAGE_KEY = 'pvks_playbook_data_v2';
 const ADMIN_STORAGE_KEY = 'pvks_playbook_admin_mode';
@@ -62,6 +63,143 @@ function buildEmptyDataset() {
   };
 }
 
+function normalizePlaybookDataset(rawDataset, projectId = '') {
+  if (!rawDataset || typeof rawDataset !== 'object') {
+    return buildEmptyDataset();
+  }
+
+  const evidences = Array.isArray(rawDataset.evidences) ? rawDataset.evidences.map(ev => {
+    if (!ev || typeof ev !== 'object') return null;
+    const actorArr = Array.isArray(ev.actores)
+      ? ev.actores
+      : (ev.actor ? [ev.actor] : (Array.isArray(ev.actors) ? ev.actors : []));
+    const actorStr = ev.actor || (actorArr.length > 0 ? actorArr[0] : '');
+    const marcaStr = ev.marca || ev.marcaRelacionada || '';
+    const levelStr = ev.nivel || ev.epistemicLevel || ev.nivelEpistemologico || 'OBSERVADO';
+    const citaStr = ev.cita || ev.verbatim || '';
+    const descStr = ev.descripcion || ev.contexto || '';
+
+    return {
+      ...ev,
+      titulo: ev.titulo || (citaStr ? `Evidencia: "${citaStr.slice(0, 45)}..."` : 'Registro de Evidencia'),
+      codigo: ev.codigo || ev.id || 'EV-00',
+      tipo: ev.tipo || 'Evidencia de Campo',
+      nivel: levelStr,
+      epistemicLevel: levelStr,
+      nivelEpistemologico: levelStr,
+      marca: marcaStr,
+      marcaRelacionada: marcaStr,
+      actores: actorArr,
+      actor: actorStr,
+      cita: citaStr,
+      verbatim: citaStr,
+      descripcion: descStr,
+      tags: Array.isArray(ev.tags) ? ev.tags : [],
+      fuente: ev.fuente || ev.fuenteReporte || 'Insumo de Campo'
+    };
+  }).filter(Boolean) : [];
+
+  const insights = Array.isArray(rawDataset.insights) ? rawDataset.insights.map(ins => {
+    if (!ins || typeof ins !== 'object') return null;
+    const marcasArr = Array.isArray(ins.marcasRelacionadas)
+      ? ins.marcasRelacionadas
+      : (ins.marcaRelacionada ? [ins.marcaRelacionada] : (Array.isArray(ins.marcas) ? ins.marcas : (ins.marca ? [ins.marca] : [])));
+    const evIds = Array.isArray(ins.evidenciasRelacionadas)
+      ? ins.evidenciasRelacionadas
+      : (Array.isArray(ins.evidenciaIds) ? ins.evidenciaIds : []);
+    const levelStr = ins.nivel || ins.epistemicLevel || ins.nivelEpistemologico || 'DERIVADO';
+
+    return {
+      ...ins,
+      titulo: ins.titulo || 'Insight Sin Título',
+      descripcion: ins.descripcion || '',
+      mecanismo: ins.mecanismo || '',
+      tension: ins.tension || '',
+      necesidad: ins.necesidad || '',
+      oportunidades: ins.oportunidades || '',
+      hipotesis: ins.hipotesis || '',
+      nivel: levelStr,
+      epistemicLevel: levelStr,
+      nivelEpistemologico: levelStr,
+      marcasRelacionadas: marcasArr,
+      evidenciasRelacionadas: evIds,
+      evidenciaIds: evIds
+    };
+  }).filter(Boolean) : [];
+
+  const tensions = Array.isArray(rawDataset.tensions) ? rawDataset.tensions.map(ten => {
+    if (!ten || typeof ten !== 'object') return null;
+    const poloA = ten.poloA || {};
+    const poloB = ten.poloB || {};
+    const labelA = poloA.nombre || poloA.etiqueta || poloA.concepto || 'Polo A';
+    const labelB = poloB.nombre || poloB.etiqueta || poloB.concepto || 'Polo B';
+    const titulo = ten.titulo || (labelA && labelB ? `${labelA} vs ${labelB}` : (ten.formulacion || 'Tensión'));
+
+    return {
+      ...ten,
+      titulo,
+      formulacion: ten.formulacion || titulo,
+      poloA: {
+        ...poloA,
+        nombre: labelA,
+        etiqueta: labelA,
+        conceptos: Array.isArray(poloA.conceptos) ? poloA.conceptos : [],
+        marcas: Array.isArray(poloA.marcas) ? poloA.marcas : (poloA.marca ? [poloA.marca] : []),
+        evidencias: Array.isArray(poloA.evidencias) ? poloA.evidencias : []
+      },
+      poloB: {
+        ...poloB,
+        nombre: labelB,
+        etiqueta: labelB,
+        conceptos: Array.isArray(poloB.conceptos) ? poloB.conceptos : [],
+        marcas: Array.isArray(poloB.marcas) ? poloB.marcas : (poloB.marca ? [poloB.marca] : []),
+        evidencias: Array.isArray(poloB.evidencias) ? poloB.evidencias : []
+      }
+    };
+  }).filter(Boolean) : [];
+
+  const decisionChains = Array.isArray(rawDataset.decisionChains) ? rawDataset.decisionChains.map(ch => {
+    if (!ch || typeof ch !== 'object') return null;
+    const etapas = Array.isArray(ch.etapas) ? ch.etapas : (Array.isArray(ch.pasos) ? ch.pasos : []);
+    return {
+      ...ch,
+      titulo: ch.titulo || ch.nombre || 'Cadena de Decisión',
+      etapas,
+      pasos: etapas
+    };
+  }).filter(Boolean) : [];
+
+  const homes = (Array.isArray(rawDataset.homes) && rawDataset.homes.length > 0)
+    ? rawDataset.homes.map(h => {
+        const init = INITIAL_HOMES.find(ih => ih.id === h.id);
+        if (
+          !h.imagenUrl ||
+          h.imagenUrl.includes('hogar1-belen-cocina') ||
+          h.imagenUrl.includes('hogar2-liam-barra') ||
+          h.imagenUrl.includes('hogar3-ferias-maletin')
+        ) {
+          return { ...h, imagenUrl: init?.imagenUrl || h.imagenUrl };
+        }
+        return h;
+      })
+    : (projectId === 'lullaby-cdmx-2026' ? INITIAL_HOMES : []);
+
+  return {
+    evidences,
+    insights,
+    tensions,
+    decisionChains,
+    transitions: Array.isArray(rawDataset.transitions) ? rawDataset.transitions : [],
+    brandMatrix: Array.isArray(rawDataset.brandMatrix) ? rawDataset.brandMatrix : [],
+    opportunities: Array.isArray(rawDataset.opportunities) ? rawDataset.opportunities : [],
+    homes,
+    actors: Array.isArray(rawDataset.actors) ? rawDataset.actors : [],
+    contexts: Array.isArray(rawDataset.contexts) ? rawDataset.contexts : [],
+    transversalBridge: Array.isArray(rawDataset.transversalBridge) ? rawDataset.transversalBridge : [],
+    lastUpdated: rawDataset.lastUpdated || new Date().toISOString()
+  };
+}
+
 function loadProjectData(projectId) {
   const scopedKey = getProjectStorageKey(projectId);
   try {
@@ -78,34 +216,13 @@ function loadProjectData(projectId) {
     }
 
     if (raw) {
-      const parsed = JSON.parse(raw);
-      return {
-        evidences: parsed.evidences || [],
-        insights: parsed.insights || [],
-        tensions: parsed.tensions || [],
-        decisionChains: parsed.decisionChains || [],
-        transitions: parsed.transitions || [],
-        brandMatrix: parsed.brandMatrix || [],
-        opportunities: parsed.opportunities || [],
-        homes: (parsed.homes && parsed.homes.length > 0)
-          ? parsed.homes.map(h => {
-              const init = INITIAL_HOMES.find(ih => ih.id === h.id);
-              if (
-                !h.imagenUrl ||
-                h.imagenUrl.includes('hogar1-belen-cocina') ||
-                h.imagenUrl.includes('hogar2-liam-barra') ||
-                h.imagenUrl.includes('hogar3-ferias-maletin')
-              ) {
-                return { ...h, imagenUrl: init?.imagenUrl || h.imagenUrl };
-              }
-              return h;
-            })
-          : (projectId === 'lullaby-cdmx-2026' ? INITIAL_HOMES : []),
-        actors: parsed.actors || [],
-        contexts: parsed.contexts || [],
-        transversalBridge: parsed.transversalBridge || [],
-        lastUpdated: parsed.lastUpdated || new Date().toISOString()
-      };
+      if (raw.includes('[FPO]')) {
+        console.info();
+        localStorage.removeItem(scopedKey);
+      } else {
+        const parsed = JSON.parse(raw);
+        return normalizePlaybookDataset(parsed, projectId);
+      }
     }
   } catch (e) {
     console.warn(`No se pudo leer datos locales para el proyecto ${projectId}:`, e);
@@ -119,13 +236,33 @@ function loadProjectData(projectId) {
   return buildEmptyDataset();
 }
 
-export function PlaybookDataProvider({ children }) {
-  // Lista de proyectos registrados
-  const [projects, setProjects] = useState(() => getStoredProjects());
+export function PlaybookDataProvider({ activePlaybookId: propActiveId, children }) {
+  // Lista de proyectos registrados combinando suitePlaybooks y proyectos locales
+  const [projects, setProjects] = useState(() => {
+    const suitePbs = getSuitePlaybooks().map(p => ({
+      id: p.id,
+      nombre: p.titulo,
+      titulo: p.titulo,
+      cliente: p.cliente,
+      vertical: p.vertical,
+      badge: p.badge,
+      descripcion: p.descripcion,
+      status: p.status,
+      enabledModules: p.enabledModules,
+      sessionId: p.sessionId
+    }));
+    const stored = getStoredProjects();
+    const suiteIds = new Set(suitePbs.map(s => s.id));
+    const merged = [...suitePbs];
+    stored.forEach(st => {
+      if (!suiteIds.has(st.id)) merged.push(st);
+    });
+    return merged;
+  });
 
   // Proyecto activo
   const [activeProjectId, setActiveProjectId] = useState(() => {
-    // Si viene en la URL (?project=...), tiene prioridad
+    if (propActiveId) return propActiveId;
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const paramProj = urlParams.get('project');
@@ -135,6 +272,12 @@ export function PlaybookDataProvider({ children }) {
     }
     return getStoredActiveProjectId();
   });
+
+  useEffect(() => {
+    if (propActiveId && propActiveId !== activeProjectId) {
+      setActiveProjectId(propActiveId);
+    }
+  }, [propActiveId]);
 
   // Modo Administrador
   const [isAdmin, setIsAdmin] = useState(() => {
@@ -162,7 +305,7 @@ export function PlaybookDataProvider({ children }) {
     fetchCloudPlaybookData(activeProjectId).then(cloudData => {
       if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
         setData(prev => {
-          const merged = { ...prev, ...cloudData };
+          const merged = normalizePlaybookDataset({ ...prev, ...cloudData }, activeProjectId);
           try {
             const scopedKey = getProjectStorageKey(activeProjectId);
             localStorage.setItem(scopedKey, JSON.stringify(merged));
@@ -412,17 +555,17 @@ export function PlaybookDataProvider({ children }) {
     importDataJSON,
 
     // Atajos directos a colecciones del proyecto activo
-    evidences: data.evidences,
-    insights: data.insights,
-    tensions: data.tensions,
-    decisionChains: data.decisionChains,
-    transitions: data.transitions,
-    brandMatrix: data.brandMatrix,
-    opportunities: data.opportunities,
-    homes: data.homes,
-    actors: data.actors,
-    contexts: data.contexts,
-    transversalBridge: data.transversalBridge,
+    evidences: data.evidences || [],
+    insights: data.insights || [],
+    tensions: data.tensions || [],
+    decisionChains: data.decisionChains || [],
+    transitions: data.transitions || [],
+    brandMatrix: data.brandMatrix || [],
+    opportunities: data.opportunities || [],
+    homes: data.homes || [],
+    actors: data.actors || [],
+    contexts: data.contexts || [],
+    transversalBridge: data.transversalBridge || [],
     lastUpdated: data.lastUpdated
   };
 

@@ -260,13 +260,13 @@ export default function SidePanelInspector({ item, onClose, onNavigateToView, on
         )}
 
         {/* Marcas y Actores Tags Clicables */}
-        {(item.marcasRelacionadas || item.marcas || item.actores) && (
+        {(item.marcasRelacionadas || item.marcas || item.marca || item.marcaRelacionada || item.actores || item.actor) && (
           <div>
             <h4 style={{ fontSize: '0.8rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', fontWeight: 700 }}>
               Entidades Vinculadas
             </h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {(item.marcasRelacionadas || item.marcas || []).map(m => (
+              {(Array.isArray(item.marcasRelacionadas) ? item.marcasRelacionadas : (item.marcaRelacionada ? [item.marcaRelacionada] : (Array.isArray(item.marcas) ? item.marcas : (item.marca ? [item.marca] : [])))).map(m => (
                 <span
                   key={m}
                   style={{
@@ -282,7 +282,7 @@ export default function SidePanelInspector({ item, onClose, onNavigateToView, on
                   🏷️ {m}
                 </span>
               ))}
-              {(item.actores || []).map(a => (
+              {(Array.isArray(item.actores) ? item.actores : (item.actor ? [item.actor] : (Array.isArray(item.actors) ? item.actors : []))).map(a => (
                 <span
                   key={a}
                   style={{

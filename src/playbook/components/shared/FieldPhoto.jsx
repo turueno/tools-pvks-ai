@@ -333,7 +333,7 @@ export default function FieldPhoto({
               </span>
               {page && (
                 <span style={{ fontSize: '0.68rem', color: '#64748B', marginTop: '4px', backgroundColor: '#FFFFFF', padding: '2px 8px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  Reporte Lullaby · {page}
+                  {photo.reportLabel || 'Reporte de Campo'} · {page}
                 </span>
               )}
             </div>
