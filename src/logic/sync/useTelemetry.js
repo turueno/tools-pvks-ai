@@ -6,8 +6,8 @@ export function useTelemetry(guardContext, currentView) {
   const hasInitialized = useRef(false);
 
   useEffect(() => {
-    if (!guardContext?.isRestricted || !guardContext?.clientTokenPayload) return;
-    const { tid, pid } = guardContext.clientTokenPayload;
+    if (!guardContext?.isRestricted || !guardContext?.tokenData) return;
+    const { tokenId: tid, playbookId: pid } = guardContext.tokenData;
 
     // 1. Registro de Acceso inicial (solo una vez por sesión de navegador)
     if (!hasInitialized.current) {
@@ -51,7 +51,8 @@ export function useTelemetry(guardContext, currentView) {
         }
       });
       // Importante: sendBeacon manda peticiones POST rápidamente antes de que el navegador mate el proceso
-      navigator.sendBeacon('/api/audit', payload);
+      const blob = new Blob([payload], { type: 'application/json' });
+      navigator.sendBeacon('/api/audit', blob);
     };
 
     window.addEventListener('beforeunload', handleUnload);
