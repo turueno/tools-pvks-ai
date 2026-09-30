@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { recordAuditEvent } from './accessTokensEngine.js';
+import { recordAuditEvent } from '../security/accessTokensEngine.js';
 
 export function useTelemetry(guardContext, currentView) {
   const sessionStartTime = useRef(Date.now());
