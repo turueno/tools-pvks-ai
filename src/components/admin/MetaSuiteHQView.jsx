@@ -5,7 +5,8 @@ import {
   issueClientToken,
   revokeClientToken,
   getAuditLog,
-  syncTokensFromCloud
+  syncTokensFromCloud,
+  syncAuditLogsFromCloud
 } from '../../logic/security/accessTokensEngine.js';
 import { getSuitePlaybooks } from '../../data/suitePlaybooksRegistry.js';
 
@@ -20,6 +21,12 @@ export default function MetaSuiteHQView({ onBackToPortal }) {
     syncTokensFromCloud().then(cloudTokens => {
       if (cloudTokens && cloudTokens.length > 0) {
         setTokens(cloudTokens);
+      }
+    });
+
+    syncAuditLogsFromCloud().then(cloudLogs => {
+      if (cloudLogs && cloudLogs.length > 0) {
+        setAuditLogs(cloudLogs);
       }
     });
   }, []);

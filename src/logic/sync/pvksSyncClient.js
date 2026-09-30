@@ -143,6 +143,23 @@ export async function recordCloudAuditEvent(event) {
 }
 
 /**
+ * Recuperar bitácora de auditoría desde la nube
+ */
+export async function fetchCloudAuditLogs() {
+  try {
+    const res = await fetch(`${API_BASE}/audit`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.logs || [];
+    }
+    return [];
+  } catch (err) {
+    console.warn('[SyncClient] Error al obtener auditoría de la nube:', err.message);
+    return [];
+  }
+}
+
+/**
  * Obtener la contraseña maestra de Meta-Admin de la nube
  */
 export async function fetchCloudMasterPass() {

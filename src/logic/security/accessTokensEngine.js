@@ -4,7 +4,8 @@ import {
   saveCloudToken,
   revokeCloudToken,
   recordCloudAuditEvent,
-  fetchCloudTokens
+  fetchCloudTokens,
+  fetchCloudAuditLogs
 } from '../sync/pvksSyncClient.js';
 
 const TOKENS_STORAGE_KEY = 'pvks_issued_tokens_v1';
@@ -22,6 +23,20 @@ export async function syncTokensFromCloud() {
     console.debug('Error sincronizando tokens desde la nube:', err.message);
   }
   return getIssuedTokens();
+}
+
+// Sincronización proactiva de auditoría desde la nube
+export async function syncAuditLogsFromCloud() {
+  try {
+    const cloudLogs = await fetchCloudAuditLogs();
+    if (cloudLogs && Array.isArray(cloudLogs) && cloudLogs.length > 0) {
+      saveAuditLog(cloudLogs);
+      return cloudLogs;
+    }
+  } catch (err) {
+    console.debug('Error sincronizando auditoría desde la nube:', err.message);
+  }
+  return getAuditLog();
 }
 
 export function getIssuedTokens() {
