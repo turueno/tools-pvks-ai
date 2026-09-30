@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { recordCloudAuditEvent } from './pvksSyncClient.js';
+import { recordAuditEvent } from './accessTokensEngine.js';
 
 export function useTelemetry(guardContext, currentView) {
   const sessionStartTime = useRef(Date.now());
@@ -8,28 +8,29 @@ export function useTelemetry(guardContext, currentView) {
   useEffect(() => {
     if (!guardContext?.isRestricted || !guardContext?.tokenData) return;
     const { tokenId: tid, playbookId: pid } = guardContext.tokenData;
+    const cliente = guardContext.tokenData.clienteDestino || 'Cliente';
 
-    // 1. Registro de Acceso inicial (solo una vez por sesión de navegador)
+    // 1. Registro de Acceso inicial
     if (!hasInitialized.current) {
       hasInitialized.current = true;
       sessionStartTime.current = Date.now();
       
-      // El backend ya registra ACCESO_PLAYBOOK al validar el token, 
-      // pero podemos registrar un inicio de sesión activo en UI.
-      recordCloudAuditEvent({
+      recordAuditEvent({
         tipo: 'SESION_INICIADA',
         tokenId: tid,
         playbookId: pid,
-        detalles: 'El usuario ingresó exitosamente al entorno del Playbook.'
+        cliente,
+        detalles: 'El usuario interactuó con la interfaz del Playbook.'
       });
     }
 
     // 2. Monitoreo de módulos vistos
     if (currentView) {
-      recordCloudAuditEvent({
+      recordAuditEvent({
         tipo: 'NAVEGACION',
         tokenId: tid,
         playbookId: pid,
+        cliente,
         detalles: `Visualizando módulo: ${currentView.toUpperCase()}`
       });
     }
@@ -41,17 +42,21 @@ export function useTelemetry(guardContext, currentView) {
       const seconds = durationSecs % 60;
       const durationText = `${minutes} min ${seconds} seg`;
 
-      // Como la pestaña se está cerrando, usamos sendBeacon para asegurar que llegue al servidor
-      const payload = JSON.stringify({
-        event: {
-          tipo: 'SESION_CERRADA',
-          tokenId: tid,
-          playbookId: pid,
-          detalles: `El usuario cerró el Playbook o recargó la página. Tiempo activo en la sesión: ${durationText}.`
-        }
-      });
-      // Importante: sendBeacon manda peticiones POST rápidamente antes de que el navegador mate el proceso
-      const blob = new Blob([payload], { type: 'application/json' });
+      const event = {
+        id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        timestamp: new Date().toISOString(),
+        tipo: 'SESION_CERRADA',
+        tokenId: tid,
+        playbookId: pid,
+        cliente,
+        detalles: `El usuario cerró el Playbook. Tiempo activo: ${durationText}.`
+      };
+
+      // Guardar localmente
+      recordAuditEvent(event);
+      
+      // Enviar por beacon directo
+      const blob = new Blob([JSON.stringify({ event })], { type: 'application/json' });
       navigator.sendBeacon('/api/audit', blob);
     };
 
